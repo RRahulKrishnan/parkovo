@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { SlidersHorizontal, SearchX } from "lucide-react";
 import { theme } from "../theme/theme";
 import ParkingSpotCard from "../components/parkingSpotCard";
@@ -58,6 +59,7 @@ const MOCK_SPOTS: ParkingSpotSummary[] = [
 ];
 
 function FindParking() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -108,9 +110,13 @@ function FindParking() {
 
       <section className="flex-1 px-6 pb-8">
         {filteredSpots.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {filteredSpots.map((spot) => (
-              <ParkingSpotCard key={spot.id} spot={spot} />
+              <ParkingSpotCard
+                key={spot.id}
+                spot={spot}
+                onClick={() => navigate(`/find-parking/${spot.id}`)}
+              />
             ))}
           </div>
         ) : (

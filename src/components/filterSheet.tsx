@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 import Button from "./button";
 import { theme } from "../theme/theme";
@@ -6,7 +6,7 @@ import AmenitySelector from "./amenitySelector";
 import SliderControl from "./sliderControl";
 import type { AmenityId } from "../types/listing";
 import { DEFAULT_FILTERS, FILTER_BOUNDS } from "../types/search";
-import type {SearchFilters} from "../types/search"
+import type { SearchFilters } from "../types/search";
 
 interface FilterSheetProps {
   isOpen: boolean;
@@ -27,14 +27,13 @@ function formatHours(value: number) {
   return `${value} hr${value === 1 ? "" : "s"}`;
 }
 
-function FilterSheet({ isOpen, filters, onClose, onApply }: FilterSheetProps) {
+function FilterSheet({
+  isOpen,
+  filters,
+  onClose,
+  onApply,
+}: FilterSheetProps) {
   const [draft, setDraft] = useState<SearchFilters>(filters);
-
-  // Re-sync the draft whenever the sheet is (re)opened, so stale edits
-  // from a previous open/close don't linger.
-  useEffect(() => {
-    if (isOpen) setDraft(filters);
-  }, [isOpen, filters]);
 
   if (!isOpen) return null;
 
@@ -61,8 +60,17 @@ function FilterSheet({ isOpen, filters, onClose, onApply }: FilterSheetProps) {
     }));
   };
 
+  const handleReset = () => {
+    setDraft(DEFAULT_FILTERS);
+  };
+
+  const handleApply = () => {
+    onApply(draft);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
+      {/* Backdrop */}
       <button
         type="button"
         aria-label="Close filters"
@@ -70,9 +78,15 @@ function FilterSheet({ isOpen, filters, onClose, onApply }: FilterSheetProps) {
         className="absolute inset-0 bg-black/40"
       />
 
+      {/* Filter Sheet */}
       <div className="relative w-full max-w-md max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white px-6 pt-5 pb-6 shadow-xl">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className={`text-lg font-bold ${theme.text.primary}`}>Filters</h2>
+
+        {/* Header */}
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className={`text-lg font-bold ${theme.text.primary}`}>
+            Filters
+          </h2>
+
           <button
             type="button"
             onClick={onClose}
@@ -83,26 +97,65 @@ function FilterSheet({ isOpen, filters, onClose, onApply }: FilterSheetProps) {
           </button>
         </div>
 
+        {/* Action Buttons */}
+        <div className="mb-7 flex gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleReset}
+          >
+            Reset
+          </Button>
+
+          <Button
+            type="button"
+            onClick={handleApply}
+          >
+            Show results
+          </Button>
+        </div>
+
+        {/* Filter Controls */}
         <div className="space-y-7">
+
+          {/* Amenities */}
           <div>
-            <h3 className={`mb-3 text-sm font-semibold ${theme.text.primary}`}>Amenities</h3>
-            <AmenitySelector selected={draft.amenities} onToggle={handleToggleAmenity} />
+            <h3
+              className={`mb-3 text-sm font-semibold ${theme.text.primary}`}
+            >
+              Amenities
+            </h3>
+
+            <AmenitySelector
+              selected={draft.amenities}
+              onToggle={handleToggleAmenity}
+            />
           </div>
 
+          {/* Search Radius */}
           <SliderControl
             label="Search radius"
             value={draft.radiusKm}
             min={FILTER_BOUNDS.radiusKm.min}
             max={FILTER_BOUNDS.radiusKm.max}
             step={FILTER_BOUNDS.radiusKm.step}
-            onChange={(radiusKm) => setDraft((prev) => ({ ...prev, radiusKm }))}
+            onChange={(radiusKm) =>
+              setDraft((prev) => ({
+                ...prev,
+                radiusKm,
+              }))
+            }
             formatValue={formatKm}
           />
 
+          {/* Price */}
           <div>
-            <h3 className={`mb-3 text-sm font-semibold ${theme.text.primary}`}>
+            <h3
+              className={`mb-3 text-sm font-semibold ${theme.text.primary}`}
+            >
               Price per hour
             </h3>
+
             <div className="space-y-5">
               <SliderControl
                 label="Min"
@@ -113,6 +166,7 @@ function FilterSheet({ isOpen, filters, onClose, onApply }: FilterSheetProps) {
                 onChange={handleMinPriceChange}
                 formatValue={formatPrice}
               />
+
               <SliderControl
                 label="Max"
                 value={draft.maxPricePerHour}
@@ -125,24 +179,21 @@ function FilterSheet({ isOpen, filters, onClose, onApply }: FilterSheetProps) {
             </div>
           </div>
 
+          {/* Duration */}
           <SliderControl
             label="Duration needed"
             value={draft.durationHours}
             min={FILTER_BOUNDS.durationHours.min}
             max={FILTER_BOUNDS.durationHours.max}
             step={FILTER_BOUNDS.durationHours.step}
-            onChange={(durationHours) => setDraft((prev) => ({ ...prev, durationHours }))}
+            onChange={(durationHours) =>
+              setDraft((prev) => ({
+                ...prev,
+                durationHours,
+              }))
+            }
             formatValue={formatHours}
           />
-        </div>
-
-        <div className="mt-8 flex gap-3">
-          <Button type="button" variant="secondary" onClick={() => setDraft(DEFAULT_FILTERS)}>
-            Reset
-          </Button>
-          <Button type="button" onClick={() => onApply(draft)}>
-            Show results
-          </Button>
         </div>
       </div>
     </div>
