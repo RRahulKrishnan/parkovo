@@ -1,8 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  GoogleAuthProvider,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  type User,
+} from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import Input from "../components/input";
 import Button from "../components/button";
 import { theme } from "../theme/theme";
+import { getFirebaseAuth, getFirestoreDb } from "../firebase/config";
+import { getAuthErrorMessage } from "../firebase/authErrors";
 
 interface FormData {
   email: string;
@@ -42,7 +53,10 @@ function Login() {
   const navigate = useNavigate();
   const [errors, setErrors] = useState<FormErrors>({});
   const [authError, setAuthError] = useState<string | null>(null);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -55,9 +69,25 @@ function Login() {
     }
   };
 
+  // Someone can be authenticated with Firebase but never have finished
+  // signup (e.g. they abandoned it right after the phone-verification
+  // step). We treat "has a Firestore profile doc" as the real signal
+  // that signup was completed, matching how signup.tsx only writes that
+  // doc once phone verification succeeds.
+  const proceedIfProfileExists = async (user: User) => {
+    const snap = await getDoc(doc(getFirestoreDb(), "users", user.uid));
+    if (snap.exists()) {
+      navigate("/find-parking");
+      return;
+    }
+    await signOut(getFirebaseAuth());
+    setAuthError("Looks like you haven't finished creating your account. Please sign up to continue.");
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setAuthError(null);
+    setResetMessage(null);
 
     const validationErrors = validate(formData);
     setErrors(validationErrors);
@@ -65,22 +95,51 @@ function Login() {
 
     setIsSubmitting(true);
     try {
-      // TODO: wire up to Supabase auth once the backend is connected.
-      // const { error } = await supabase.auth.signInWithPassword({
-      //   email: formData.email,
-      //   password: formData.password,
-      // });
-      // if (error) throw error;
-      await new Promise((resolve) => setTimeout(resolve, 900));
+      const auth = getFirebaseAuth();
+      const credential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      await proceedIfProfileExists(credential.user);
     } catch (err: unknown) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "We couldn't sign you in. Check your email and password and try again.";
       console.error("Sign in failed:", err);
-      setAuthError(message);
+      setAuthError(getAuthErrorMessage(err));
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setAuthError(null);
+    setResetMessage(null);
+    setIsGoogleSigningIn(true);
+    try {
+      const auth = getFirebaseAuth();
+      const result = await signInWithPopup(auth, new GoogleAuthProvider());
+      await proceedIfProfileExists(result.user);
+    } catch (err: unknown) {
+      console.error("Google sign-in failed:", err);
+      setAuthError(getAuthErrorMessage(err));
+    } finally {
+      setIsGoogleSigningIn(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setAuthError(null);
+    setResetMessage(null);
+
+    if (!formData.email.trim() || !EMAIL_PATTERN.test(formData.email)) {
+      setErrors((prev) => ({ ...prev, email: "Enter your email above first" }));
+      return;
+    }
+
+    setIsSendingReset(true);
+    try {
+      await sendPasswordResetEmail(getFirebaseAuth(), formData.email);
+      setResetMessage(`Password reset link sent to ${formData.email}.`);
+    } catch (err: unknown) {
+      console.error("Password reset failed:", err);
+      setAuthError(getAuthErrorMessage(err));
+    } finally {
+      setIsSendingReset(false);
     }
   };
 
@@ -116,6 +175,15 @@ function Login() {
           </div>
         )}
 
+        {resetMessage && (
+          <div
+            role="status"
+            className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
+          >
+            {resetMessage}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} noValidate className="space-y-5">
           <Input
             id="email"
@@ -145,9 +213,11 @@ function Login() {
           <div className="flex items-center justify-end -mt-1">
             <button
               type="button"
-              className={`text-sm font-medium ${theme.text.link} transition`}
+              onClick={handleForgotPassword}
+              disabled={isSendingReset}
+              className={`text-sm font-medium ${theme.text.link} transition disabled:opacity-60`}
             >
-              Forgot password?
+              {isSendingReset ? "Sending…" : "Forgot password?"}
             </button>
           </div>
 
@@ -162,7 +232,12 @@ function Login() {
           <div className={`h-px flex-1 ${theme.divider}`} />
         </div>
 
-        <Button variant="secondary" type="button">
+        <Button
+          variant="secondary"
+          type="button"
+          isLoading={isGoogleSigningIn}
+          onClick={handleGoogleSignIn}
+        >
           <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
             <path
               fill="#4285F4"

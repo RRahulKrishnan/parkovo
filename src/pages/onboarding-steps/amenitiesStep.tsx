@@ -1,9 +1,9 @@
 import { useState } from "react";
-import Button from "../components/button";
-import { theme } from "../theme/theme";
-import AmenitySelector from "../components/amenitySelector";
-import SpotSizeSelector from "../components/spotSizeSelector";
-import type { AmenitiesData, AmenityId } from "../types/listing";
+import Button from "../../components/button";
+import { theme } from "../../theme/theme";
+import AmenitySelector from "../../components/amenitySelector";
+import SpotSizeSelector from "../../components/spotSizeSelector";
+import type { AmenitiesData, AmenityId } from "../../types/listing";
 
 interface AmenitiesStepProps {
   data: AmenitiesData;

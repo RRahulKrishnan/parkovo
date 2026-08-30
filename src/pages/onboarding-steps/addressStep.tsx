@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { LocateFixed, Loader2 } from "lucide-react";
-import Input from "../components/input";
-import Button from "../components/button";
-import { theme } from "../theme/theme";
-import type { AddressData } from "../types/listing";
+import Input from "../../components/input";
+import Button from "../../components/button";
+import { theme } from "../../theme/theme";
+import type { AddressData } from "../../types/listing";
 
 interface AddressStepProps {
   data: AddressData;
@@ -167,7 +167,7 @@ function AddressStep({ data, onNext }: AddressStepProps) {
             label="Street address"
             type="text"
             autoComplete="address-line1"
-            placeholder="Flat / House no., building, street"
+            placeholder="Flat / House no, building, street"
             value={formData.line1}
             onChange={handleChange}
             error={errors.line1}

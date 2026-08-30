@@ -2,10 +2,10 @@ import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { theme } from "../theme/theme";
 import ProgressBar from "../components/progressBar";
-import AddressStep from "./addressStep";
-import PhotosStep from "./photosStep";
-import AmenitiesStep from "./amenitiesStep";
-import AvailabilityStep from "./availabilityStep";
+import AddressStep from "./onboarding-steps/addressStep";
+import PhotosStep from "./onboarding-steps/photosStep";
+import AmenitiesStep from "./onboarding-steps/amenitiesStep";
+import AvailabilityStep from "./onboarding-steps/availabilityStep";
 import {
   EMPTY_LISTING_FORM,
   LISTING_STEPS,

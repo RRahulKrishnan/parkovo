@@ -1,8 +1,8 @@
 import { useState } from "react";
-import Button from "../components/button";
-import { theme } from "../theme/theme";
-import AvailabilityCalendar from "../components/availabilityCalendar";
-import type { AvailabilityData } from "../types/listing";
+import Button from "../../components/button";
+import { theme } from "../../theme/theme";
+import AvailabilityCalendar from "../../components/availabilityCalendar";
+import type { AvailabilityData } from "../../types/listing";
 
 interface AvailabilityStepProps {
   data: AvailabilityData;

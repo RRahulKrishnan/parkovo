@@ -6,6 +6,10 @@ interface InputProps
   id?: string;
   label: string;
   error?: string;
+  /** Optional content rendered inside the input on the right (e.g. a
+   * "Verify" action). Ignored for password fields, which already use
+   * that slot for the show/hide toggle. */
+  trailing?: React.ReactNode;
 }
 
 function Input({
@@ -14,6 +18,7 @@ function Input({
   type = "text",
   error,
   className = "",
+  trailing,
   ...rest
 }: InputProps) {
   const generatedId = useId();
@@ -23,6 +28,7 @@ function Input({
   const [show, setShow] = useState(false);
   const isPassword = type === "password";
   const resolvedType = isPassword && show ? "text" : type;
+  const hasTrailing = isPassword || Boolean(trailing);
 
   return (
     <div>
@@ -39,7 +45,7 @@ function Input({
           type={resolvedType}
           aria-invalid={!!error}
           aria-describedby={errorId}
-          className={`w-full h-12 px-4 ${isPassword ? "pr-14" : ""} rounded-lg border ${
+          className={`w-full h-12 px-4 ${hasTrailing ? "pr-14" : ""} rounded-lg border ${
             theme.surface.page
           } ${theme.text.primary} placeholder:text-slate-400 outline-none transition focus:ring-1 ${
             error
@@ -59,6 +65,10 @@ function Input({
           >
             {show ? "Hide" : "Show"}
           </button>
+        )}
+
+        {!isPassword && trailing && (
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">{trailing}</div>
         )}
       </div>
 

@@ -1,9 +1,9 @@
 import { useState } from "react";
-import Button from "../components/button";
-import { theme } from "../theme/theme";
-import PhotoUploader from "../components/photoUploader";
-import { MIN_PHOTOS_REQUIRED } from "../types/listing";
-import type { PhotosData } from "../types/listing";
+import Button from "../../components/button";
+import { theme } from "../../theme/theme";
+import PhotoUploader from "../../components/photoUploader";
+import { MIN_PHOTOS_REQUIRED } from "../../types/listing";
+import type { PhotosData } from "../../types/listing";
 
 interface PhotosStepProps {
   data: PhotosData;
