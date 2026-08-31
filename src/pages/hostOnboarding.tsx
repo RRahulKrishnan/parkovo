@@ -4,18 +4,19 @@ import { theme } from "../theme/theme";
 import ProgressBar from "../components/progressBar";
 import AddressStep from "./onboarding-steps/addressStep";
 import PhotosStep from "./onboarding-steps/photosStep";
+import AboutStep from "./onboarding-steps/aboutStep";
+import PricingStep from "./onboarding-steps/pricingStep";
 import AmenitiesStep from "./onboarding-steps/amenitiesStep";
 import AvailabilityStep from "./onboarding-steps/availabilityStep";
-import {
-  EMPTY_LISTING_FORM,
-  LISTING_STEPS,
-} from "../types/listing";
+import { EMPTY_LISTING_FORM, LISTING_STEPS } from "../types/listing";
 import type {
+  AboutData,
   AddressData,
   AmenitiesData,
   AvailabilityData,
   ListingFormData,
   PhotosData,
+  PricingData,
 } from "../types/listing";
 
 const TOTAL_STEPS = LISTING_STEPS.length;
@@ -38,9 +39,19 @@ function ListingFlow() {
     setStep(3);
   };
 
+  const handleAboutNext = (about: AboutData) => {
+    setFormData((prev) => ({ ...prev, about }));
+    setStep(4);
+  };
+
+  const handlePricingNext = (pricing: PricingData) => {
+    setFormData((prev) => ({ ...prev, pricing }));
+    setStep(5);
+  };
+
   const handleAmenitiesNext = (amenities: AmenitiesData) => {
     setFormData((prev) => ({ ...prev, amenities }));
-    setStep(4);
+    setStep(6);
   };
 
   const handleAvailabilitySubmit = async (availability: AvailabilityData) => {
@@ -54,6 +65,8 @@ function ListingFlow() {
       // const payload = new FormData();
       // payload.append("address", JSON.stringify(finalData.address));
       // finalData.photos.files.forEach((file) => payload.append("photos", file));
+      // payload.append("about", JSON.stringify(finalData.about));
+      // payload.append("pricing", JSON.stringify(finalData.pricing));
       // payload.append("amenities", JSON.stringify(finalData.amenities));
       // payload.append("availability", JSON.stringify(finalData.availability));
       // await api.createListing(payload);
@@ -94,10 +107,7 @@ function ListingFlow() {
 
       <section className="flex-1 px-6 pb-8">
         {submitError && (
-          <div
-            role="alert"
-            className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
-          >
+          <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
             {submitError}
           </div>
         )}
@@ -109,10 +119,18 @@ function ListingFlow() {
         )}
 
         {step === 3 && (
-          <AmenitiesStep data={formData.amenities} onNext={handleAmenitiesNext} onBack={goBack} />
+          <AboutStep data={formData.about} onNext={handleAboutNext} onBack={goBack} />
         )}
 
         {step === 4 && (
+          <PricingStep data={formData.pricing} onNext={handlePricingNext} onBack={goBack} />
+        )}
+
+        {step === 5 && (
+          <AmenitiesStep data={formData.amenities} onNext={handleAmenitiesNext} onBack={goBack} />
+        )}
+
+        {step === 6 && (
           <AvailabilityStep
             data={formData.availability}
             onSubmit={handleAvailabilitySubmit}

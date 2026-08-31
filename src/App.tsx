@@ -9,7 +9,7 @@ import ParkingSpotDetail from "./pages/parkingSpotDetail";
 import Bookings from "./pages/bookings";
 import Hostings from "./pages/hostings";
 import Profile from "./pages/profile";
-import AppLayout from "./layouts/applayout";
+import AppLayout from "./layouts/appLayout";
 
 function App() {
   return (

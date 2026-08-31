@@ -1,5 +1,4 @@
-// Shared types for the "list your parking spot" flow.
-// Keeping these in one file means every step + component agrees on shape.
+import type { RentalPricing } from "./search";
 
 export type SpotSize = "hatchback" | "compact" | "sedan" | "suv" | "truck";
 
@@ -44,11 +43,22 @@ export interface AddressData {
 }
 
 export interface PhotosData {
-  // File objects live in memory only for the duration of the flow.
-  // previewUrls are the object URLs generated for each file, kept in
-  // lockstep with `files` by index.
   files: File[];
   previewUrls: string[];
+}
+
+// Maps 1:1 onto the "About this spot" / "How to get there" sections shown
+// on the ad detail page — same field names, same copy, no translation layer.
+export interface AboutData {
+  description: string;
+  howToGetThere: string;
+}
+
+// hourly is required, longer-term rates are opt-in per host.
+export interface PricingData extends RentalPricing {
+  offersDaily: boolean;
+  offersWeekly: boolean;
+  offersMonthly: boolean;
 }
 
 export interface AmenitiesData {
@@ -57,14 +67,16 @@ export interface AmenitiesData {
 }
 
 export interface AvailabilityData {
-  isOngoing: boolean; // host indefinitely, no fixed end date
-  startDate: string; // ISO date, e.g. "2026-08-20"
-  endDate: string; // ISO date, ignored when isOngoing is true
+  isOngoing: boolean;
+  startDate: string;
+  endDate: string;
 }
 
 export interface ListingFormData {
   address: AddressData;
   photos: PhotosData;
+  about: AboutData;
+  pricing: PricingData;
   amenities: AmenitiesData;
   availability: AvailabilityData;
 }
@@ -82,6 +94,16 @@ export const EMPTY_LISTING_FORM: ListingFormData = {
     files: [],
     previewUrls: [],
   },
+  about: {
+    description: "",
+    howToGetThere: "",
+  },
+  pricing: {
+    hourly: 0,
+    offersDaily: false,
+    offersWeekly: false,
+    offersMonthly: false,
+  },
   amenities: {
     amenities: [],
     spotSize: "",
@@ -93,5 +115,12 @@ export const EMPTY_LISTING_FORM: ListingFormData = {
   },
 };
 
-export const LISTING_STEPS = ["Address", "Photos", "Amenities", "Availability"] as const;
+export const LISTING_STEPS = [
+  "Address",
+  "Photos",
+  "About",
+  "Pricing",
+  "Amenities",
+  "Availability",
+] as const;
 export const MIN_PHOTOS_REQUIRED = 4;

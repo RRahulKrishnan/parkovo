@@ -29,7 +29,7 @@ function CompactSpotCard({ spot, onClick }: CompactSpotCardProps) {
         </p>
         <div className="mt-1.5 flex items-center justify-between">
           <p className="text-sm font-bold text-blue-600">
-            ₹{spot.pricePerHour}
+            ₹{spot.pricing.hourly}
             <span className={`text-[10px] font-medium ${theme.text.muted}`}>/hr</span>
           </p>
           {spot.rating !== undefined && (

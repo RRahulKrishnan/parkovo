@@ -5,8 +5,8 @@ import { theme } from "../theme/theme";
 import AmenitySelector from "./amenitySelector";
 import SliderControl from "./sliderControl";
 import type { AmenityId } from "../types/listing";
-import { DEFAULT_FILTERS, FILTER_BOUNDS } from "../types/search";
-import type { SearchFilters } from "../types/search";
+import { ALL_STATUSES, DEFAULT_FILTERS, FILTER_BOUNDS, STATUS_META } from "../types/search";
+import type { SearchFilters, SpotStatus } from "../types/search";
 
 interface FilterSheetProps {
   isOpen: boolean;
@@ -43,6 +43,15 @@ function FilterSheet({
       amenities: prev.amenities.includes(id)
         ? prev.amenities.filter((item) => item !== id)
         : [...prev.amenities, id],
+    }));
+  };
+
+  const handleToggleStatus = (status: SpotStatus) => {
+    setDraft((prev) => ({
+      ...prev,
+      statuses: prev.statuses.includes(status)
+        ? prev.statuses.filter((s) => s !== status)
+        : [...prev.statuses, status],
     }));
   };
 
@@ -117,6 +126,36 @@ function FilterSheet({
 
         {/* Filter Controls */}
         <div className="space-y-7">
+
+          {/* Status */}
+          <div>
+            <h3
+              className={`mb-3 text-sm font-semibold ${theme.text.primary}`}
+            >
+              Status
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {ALL_STATUSES.map((status) => {
+                const meta = STATUS_META[status];
+                const active = draft.statuses.includes(status);
+                return (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => handleToggleStatus(status)}
+                    className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                      active
+                        ? "border-blue-600 bg-blue-50 text-blue-700"
+                        : `${theme.border.default} ${theme.text.secondary} hover:bg-slate-50`
+                    }`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${meta.dotClass}`} />
+                    {meta.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Amenities */}
           <div>

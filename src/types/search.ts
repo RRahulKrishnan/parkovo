@@ -1,14 +1,47 @@
 import type { AmenityId, SpotSize } from "./listing";
 
+export type SpotStatus = "available" | "available_soon" | "booked";
+
+export const STATUS_META: Record
+  SpotStatus,
+  { label: string; badgeClass: string; dotClass: string }
+> = {
+  available: {
+    label: "Available",
+    badgeClass: "bg-emerald-50 text-emerald-700",
+    dotClass: "bg-emerald-500",
+  },
+  available_soon: {
+    label: "Available for short period",
+    badgeClass: "bg-amber-50 text-amber-700",
+    dotClass: "bg-amber-500",
+  },
+  booked: {
+    label: "Booked",
+    badgeClass: "bg-slate-100 text-slate-500",
+    dotClass: "bg-slate-400",
+  },
+};
+
+// Hourly is always required; the longer-term rates are optional since not
+// every host offers weekly/monthly rentals.
+export interface RentalPricing {
+  hourly: number;
+  daily?: number;
+  weekly?: number;
+  monthly?: number;
+}
+
 export interface ParkingSpotSummary {
   id: string;
   title: string;
   address: string;
   distanceKm: number;
-  pricePerHour: number;
+  pricing: RentalPricing;
   imageUrl: string;
   amenities: AmenityId[];
   spotSize: SpotSize;
+  status: SpotStatus;
   rating?: number;
 }
 
