@@ -1,38 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Warehouse, MapPin, Plus } from "lucide-react";
+import { Warehouse, MapPin, Plus, Pencil } from "lucide-react";
 import Button from "../components/button";
 import { theme } from "../theme/theme";
-
-interface Hosting {
-  id: string;
-  spotName: string;
-  address: string;
-  status: "active" | "paused";
-  bookingsThisMonth: number;
-}
-
-// Placeholder data so the screen is reviewable before Firestore is wired
-// in. Replace with a query against a `listings` collection filtered by
-// the signed-in user's uid as hostId (see TODO below).
-const MOCK_HOSTINGS: Hosting[] = [
-  {
-    id: "1",
-    spotName: "Private driveway, Koramangala",
-    address: "80 Feet Rd, Koramangala, Bengaluru",
-    status: "active",
-    bookingsThisMonth: 6,
-  },
-];
+import { MOCK_HOSTINGS, type Hosting } from "../data/mockHostings.tsx";
 
 function Hostings() {
   const navigate = useNavigate();
   const [hostings, setHostings] = useState<Hosting[] | null>(null);
 
   useEffect(() => {
-    // TODO: replace with a Firestore query, e.g.
-    // const q = query(collection(db, "listings"), where("hostId", "==", auth.currentUser?.uid));
-    // const snap = await getDocs(q);
+    // TODO: replace with a real Supabase query, e.g.
+    // const { data } = await supabase.from("listings").select("*").eq("host_id", user.id);
     const timer = setTimeout(() => setHostings(MOCK_HOSTINGS), 300);
     return () => clearTimeout(timer);
   }, []);
@@ -78,11 +57,11 @@ function Hostings() {
                 className={`rounded-2xl border ${theme.border.default} p-4`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-bold">{hosting.spotName}</h3>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold">{hosting.title}</h3>
                     <p className={`mt-1 flex items-center gap-1 text-xs ${theme.text.secondary}`}>
-                      <MapPin className="h-3.5 w-3.5" />
-                      {hosting.address}
+                      <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="truncate">{hosting.address}</span>
                     </p>
                   </div>
                   <span
@@ -95,9 +74,20 @@ function Hostings() {
                     {hosting.status}
                   </span>
                 </div>
-                <p className={`mt-3 text-xs ${theme.text.secondary}`}>
-                  {hosting.bookingsThisMonth} bookings this month
-                </p>
+
+                <div className="mt-3 flex items-center justify-between">
+                  <p className={`text-xs ${theme.text.secondary}`}>
+                    {hosting.bookingsThisMonth} bookings this month
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/hostings/${hosting.id}/edit`)}
+                    className={`flex items-center gap-1 text-xs font-semibold ${theme.text.link}`}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit
+                  </button>
+                </div>
               </div>
             ))}
 
