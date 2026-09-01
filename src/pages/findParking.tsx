@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { SlidersHorizontal, SearchX, MapPin, Loader2 } from "lucide-react";
+import { SlidersHorizontal, SearchX, MapPin } from "lucide-react";
 import { theme } from "../theme/theme";
 import ParkingSpotCard from "../components/parkingSpotCard";
 import FilterSheet from "../components/filterSheet";
+import LocationPicker, { type LocationResult } from "../components/locationPicker";
 import type { ParkingSpotSummary } from "../types/search";
 import { countActiveFilters, DEFAULT_FILTERS } from "../types/search";
 import type { SearchFilters } from "../types/search";
@@ -67,8 +68,12 @@ function FindParking() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [locationLabel, setLocationLabel] = useState("Current location");
-  const [isLocating, setIsLocating] = useState(false);
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+  const [locationLabel, setLocationLabel] = useState("Search location");
+  // Not yet wired into the mock filtering below — MOCK_SPOTS uses static
+  // distanceKm values. Once a real API call replaces the mock data, pass
+  // these coordinates along so distance can be computed server-side.
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
 
   const activeFilterCount = useMemo(() => countActiveFilters(filters), [filters]);
 
@@ -92,20 +97,10 @@ function FindParking() {
     setIsFilterOpen(false);
   };
 
-  // TODO: swap for a real place picker (e.g. Google Places autocomplete
-  // sheet). For now this re-runs geolocation and re-centers the search.
-  const handleChangeLocation = () => {
-    if (!("geolocation" in navigator)) return;
-    setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      () => {
-        // const address = await api.reverseGeocode(latitude, longitude);
-        setLocationLabel("Current location");
-        setIsLocating(false);
-      },
-      () => setIsLocating(false),
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+  const handleLocationConfirmed = (result: LocationResult) => {
+    setLocationLabel(result.label);
+    setCoordinates({ lat: result.lat, lng: result.lng });
+    setIsLocationPickerOpen(false);
   };
 
   return (
@@ -116,15 +111,10 @@ function FindParking() {
         <div className="mt-4 flex items-center gap-2">
           <button
             type="button"
-            onClick={handleChangeLocation}
-            disabled={isLocating}
+            onClick={() => setIsLocationPickerOpen(true)}
             className={`flex min-w-0 flex-1 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${theme.border.default} hover:bg-slate-50`}
           >
-            {isLocating ? (
-              <Loader2 className="h-4 w-4 flex-shrink-0 animate-spin text-blue-600" />
-            ) : (
-              <MapPin className="h-4 w-4 flex-shrink-0 text-blue-600" />
-            )}
+            <MapPin className="h-4 w-4 flex-shrink-0 text-blue-600" />
             <span className="truncate">{locationLabel}</span>
           </button>
 
@@ -172,6 +162,14 @@ function FindParking() {
         onClose={() => setIsFilterOpen(false)}
         onApply={handleApplyFilters}
       />
+
+      {isLocationPickerOpen && (
+        <LocationPicker
+          initialCenter={coordinates ?? undefined}
+          onClose={() => setIsLocationPickerOpen(false)}
+          onConfirm={handleLocationConfirmed}
+        />
+      )}
     </main>
   );
 }

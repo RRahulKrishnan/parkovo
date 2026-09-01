@@ -2,7 +2,7 @@ import type { AmenityId, SpotSize } from "./listing";
 
 export type SpotStatus = "available" | "available_soon" | "booked";
 
-export const STATUS_META: Record
+export const STATUS_META: Record<
   SpotStatus,
   { label: string; badgeClass: string; dotClass: string }
 > = {
@@ -22,6 +22,8 @@ export const STATUS_META: Record
     dotClass: "bg-slate-400",
   },
 };
+
+export const ALL_STATUSES = Object.keys(STATUS_META) as SpotStatus[];
 
 // Hourly is always required; the longer-term rates are optional since not
 // every host offers weekly/monthly rentals.
@@ -51,6 +53,7 @@ export interface SearchFilters {
   minPricePerHour: number;
   maxPricePerHour: number;
   durationHours: number;
+  statuses: SpotStatus[];
 }
 
 export const FILTER_BOUNDS = {
@@ -65,6 +68,7 @@ export const DEFAULT_FILTERS: SearchFilters = {
   minPricePerHour: FILTER_BOUNDS.price.min,
   maxPricePerHour: FILTER_BOUNDS.price.max,
   durationHours: FILTER_BOUNDS.durationHours.default,
+  statuses: ALL_STATUSES,
 };
 
 export function countActiveFilters(filters: SearchFilters): number {
@@ -77,5 +81,6 @@ export function countActiveFilters(filters: SearchFilters): number {
   )
     count += 1;
   if (filters.durationHours !== FILTER_BOUNDS.durationHours.default) count += 1;
+  if (filters.statuses.length !== ALL_STATUSES.length) count += 1;
   return count;
 }

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarCheck, MapPin } from "lucide-react";
+import { CalendarCheck, MapPin, Ban } from "lucide-react";
+import Button from "../components/button";
+import ConfirmDialog from "../components/confirmDialog";
 import { theme } from "../theme/theme";
 
 interface Booking {
@@ -9,12 +11,9 @@ interface Booking {
   address: string;
   date: string;
   timeRange: string;
-  status: "upcoming" | "active" | "completed";
+  status: "upcoming" | "active" | "completed" | "cancelled";
 }
 
-// Placeholder data so the screen is reviewable before Firestore is wired
-// in. Replace with a query against a `bookings` collection filtered by
-// the signed-in user's uid (see TODO below).
 const MOCK_BOOKINGS: Booking[] = [
   {
     id: "1",
@@ -38,19 +37,39 @@ const STATUS_STYLES: Record<Booking["status"], string> = {
   upcoming: "bg-blue-50 text-blue-600",
   active: "bg-emerald-50 text-emerald-600",
   completed: "bg-slate-100 text-slate-500",
+  cancelled: "bg-red-50 text-red-600",
 };
 
 function Bookings() {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[] | null>(null);
+  const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
-    // TODO: replace with a Firestore query, e.g.
-    // const q = query(collection(db, "bookings"), where("userId", "==", auth.currentUser?.uid));
-    // const snap = await getDocs(q);
     const timer = setTimeout(() => setBookings(MOCK_BOOKINGS), 300);
     return () => clearTimeout(timer);
   }, []);
+
+  const cancelTarget = bookings?.find((b) => b.id === cancelTargetId) ?? null;
+
+  const handleConfirmCancel = async () => {
+    if (!cancelTargetId) return;
+    setIsCancelling(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setBookings((prev) =>
+        prev
+          ? prev.map((b) => (b.id === cancelTargetId ? { ...b, status: "cancelled" } : b))
+          : prev
+      );
+      setCancelTargetId(null);
+    } catch (err) {
+      console.error("Failed to cancel booking:", err);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   return (
     <main className={`min-h-screen ${theme.surface.page} ${theme.text.primary}`}>
@@ -110,16 +129,43 @@ function Bookings() {
                     {booking.status}
                   </span>
                 </div>
+
                 <div className={`mt-3 flex items-center gap-2 text-xs ${theme.text.secondary}`}>
                   <span>{booking.date}</span>
                   <span aria-hidden="true">·</span>
                   <span>{booking.timeRange}</span>
                 </div>
+
+                {booking.status === "upcoming" && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    fullWidth={false}
+                    onClick={() => setCancelTargetId(booking.id)}
+                    className="mt-3"
+                  >
+                    <Ban className="h-3.5 w-3.5" />
+                    Cancel booking
+                  </Button>
+                )}
               </div>
             ))}
           </div>
         )}
       </section>
+
+      {cancelTarget && (
+        <ConfirmDialog
+          title="Cancel this booking?"
+          description={`${cancelTarget.spotName} · ${cancelTarget.date}, ${cancelTarget.timeRange}. This can't be undone, and any applicable cancellation policy will apply.`}
+          confirmLabel={isCancelling ? "Cancelling…" : "Cancel booking"}
+          cancelLabel="Keep booking"
+          isLoading={isCancelling}
+          onConfirm={handleConfirmCancel}
+          onClose={() => setCancelTargetId(null)}
+        />
+      )}
     </main>
   );
 }

@@ -11,9 +11,6 @@
  * safe under Tailwind's JIT scanner.
  */
 export const theme = {
-  // Raw values, for anything that genuinely needs the bare token
-  // (charts, inline SVG fills, etc). Do NOT use these to build
-  // className strings.
   raw: {
     primary: "#2563eb", // blue-600
     primaryHover: "#1d4ed8", // blue-700
@@ -52,5 +49,9 @@ export const theme = {
       "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 focus:ring-blue-600",
     secondary:
       "bg-white text-slate-950 border border-slate-300 hover:bg-slate-50 focus:ring-blue-600",
+    destructive:
+      "bg-white text-red-600 border border-red-200 hover:bg-red-50 active:bg-red-100 focus:ring-red-500",
+    destructiveSolid:
+      "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 focus:ring-red-500",
   },
 } as const;
