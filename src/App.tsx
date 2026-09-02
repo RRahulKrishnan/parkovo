@@ -9,7 +9,6 @@ import ParkingSpotDetail from "./pages/parkingSpotDetail";
 import Bookings from "./pages/bookings";
 import Hostings from "./pages/hostings";
 import Profile from "./pages/profile";
-import EditHosting from "./pages/editHosting";
 import AppLayout from "./layouts/appLayout";
 
 function App() {
@@ -21,6 +20,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/host-onboarding" element={<HostOnboarding />} />
+        <Route path="/host-onboarding/:id" element={<HostOnboarding />} />
 
         <Route element={<AppLayout />}>
           <Route path="/find-parking" element={<FindParking />} />
@@ -30,7 +30,6 @@ function App() {
         </Route>
 
         <Route path="/find-parking/:id" element={<ParkingSpotDetail />} />
-        <Route path="/hostings/:id/edit" element={<EditHosting />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

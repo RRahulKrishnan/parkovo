@@ -1,16 +1,11 @@
-import type { AmenityId, SpotSize } from "../types/listing";
-import type { RentalPricing } from "../types/search";
+import { EMPTY_LISTING_FORM } from "../types/listing";
+import type { ListingFormData } from "../types/listing";
 
 export interface Hosting {
   id: string;
-  title: string;
-  description: string;
-  address: string;
-  pricing: RentalPricing;
-  amenities: AmenityId[];
-  spotSize: SpotSize;
   status: "active" | "paused";
   bookingsThisMonth: number;
+  listing: ListingFormData;
 }
 
 // TODO: replace with a real Supabase query once the `listings` table
@@ -19,14 +14,46 @@ export interface Hosting {
 export const MOCK_HOSTINGS: Hosting[] = [
   {
     id: "1",
-    title: "Private driveway, Koramangala",
-    description:
-      "Secure, gated driveway space with room for one sedan or hatchback. Well-lit at night, and just a short walk from the main road.",
-    address: "80 Feet Rd, Koramangala, Bengaluru",
-    pricing: { hourly: 35, daily: 200 },
-    amenities: ["gated_community", "well_lit"],
-    spotSize: "sedan",
     status: "active",
     bookingsThisMonth: 6,
+    listing: {
+      ...EMPTY_LISTING_FORM,
+      address: {
+        useCurrentLocation: false,
+        line1: "80 Feet Rd",
+        line2: "",
+        city: "Bengaluru",
+        state: "Karnataka",
+        postalCode: "560034",
+      },
+      about: {
+        description:
+          "Secure, gated driveway space with room for one sedan or hatchback. Well-lit at night, and just a short walk from the main road.",
+        howToGetThere: "",
+      },
+      pricing: {
+        hourly: 35,
+        daily: 200,
+        offersDaily: true,
+        offersWeekly: false,
+        offersMonthly: false,
+      },
+      amenities: {
+        amenities: ["gated_community", "well_lit"],
+        spotSize: "sedan",
+      },
+    },
   },
 ];
+
+// List views (hostings.tsx) shouldn't need to know the shape of
+// ListingFormData just to show a name — since there's no dedicated
+// "title" field in the form, derive one from the street address.
+export function hostingTitle(hosting: Hosting): string {
+  return hosting.listing.address.line1 || "Untitled listing";
+}
+
+export function hostingSubtitle(hosting: Hosting): string {
+  const { city, state } = hosting.listing.address;
+  return [city, state].filter(Boolean).join(", ");
+}

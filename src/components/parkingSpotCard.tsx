@@ -111,15 +111,6 @@ function ParkingSpotCard({ spot, onClick }: ParkingSpotCardProps) {
             ₹{spot.pricing.hourly}
             <span className={`text-xs font-medium ${theme.text.muted}`}> / hour</span>
           </p>
-          {spot.pricing.daily !== undefined && (
-            <p className={`text-xs font-medium ${theme.text.muted}`}>₹{spot.pricing.daily}/day</p>
-          )}
-          {spot.pricing.weekly !== undefined && (
-            <p className={`text-xs font-medium ${theme.text.muted}`}>₹{spot.pricing.weekly}/wk</p>
-          )}
-          {spot.pricing.monthly !== undefined && (
-            <p className={`text-xs font-medium ${theme.text.muted}`}>₹{spot.pricing.monthly}/mo</p>
-          )}
         </div>
       </div>
     </button>

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarCheck, MapPin, Ban } from "lucide-react";
+import { CalendarCheck, MapPin, Ban, Pencil } from "lucide-react";
 import Button from "../components/button";
 import ConfirmDialog from "../components/confirmDialog";
 import { theme } from "../theme/theme";
@@ -40,6 +40,63 @@ const STATUS_STYLES: Record<Booking["status"], string> = {
   cancelled: "bg-red-50 text-red-600",
 };
 
+interface BookingCardProps {
+  booking: Booking;
+  onEdit: (id: string) => void;
+  onCancel: (id: string) => void;
+}
+
+function BookingCard({ booking, onEdit, onCancel }: BookingCardProps) {
+  const isPast = booking.status === "completed" || booking.status === "cancelled";
+
+  return (
+    <div
+      className={`rounded-2xl border p-4 transition ${theme.border.default} ${
+        isPast ? "bg-slate-50/70 opacity-80" : "bg-white"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-bold">{booking.spotName}</h3>
+          <p className={`mt-1 flex items-center gap-1 text-xs ${theme.text.secondary}`}>
+            <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="truncate">{booking.address}</span>
+          </p>
+        </div>
+        <span
+          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${STATUS_STYLES[booking.status]}`}
+        >
+          {booking.status}
+        </span>
+      </div>
+
+      <div className={`mt-3 flex items-center gap-2 text-xs ${theme.text.secondary}`}>
+        <span>{booking.date}</span>
+        <span aria-hidden="true">·</span>
+        <span>{booking.timeRange}</span>
+      </div>
+
+      {booking.status === "upcoming" && (
+        <div className="mt-4 flex gap-2">
+          <Button type="button" variant="secondary" size="sm" onClick={() => onEdit(booking.id)}>
+            <Pencil className="h-3.5 w-3.5" />
+            Edit 
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            onClick={() => onCancel(booking.id)}
+          >
+            <Ban className="h-3.5 w-3.5" />
+            Cancel 
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Bookings() {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[] | null>(null);
@@ -52,6 +109,15 @@ function Bookings() {
   }, []);
 
   const cancelTarget = bookings?.find((b) => b.id === cancelTargetId) ?? null;
+
+  const upcomingBookings = useMemo(
+    () => bookings?.filter((b) => b.status === "upcoming" || b.status === "active") ?? [],
+    [bookings]
+  );
+  const pastBookings = useMemo(
+    () => bookings?.filter((b) => b.status === "completed" || b.status === "cancelled") ?? [],
+    [bookings]
+  );
 
   const handleConfirmCancel = async () => {
     if (!cancelTargetId) return;
@@ -109,48 +175,42 @@ function Bookings() {
         )}
 
         {bookings !== null && bookings.length > 0 && (
-          <div className="space-y-3">
-            {bookings.map((booking) => (
-              <div
-                key={booking.id}
-                className={`rounded-2xl border ${theme.border.default} p-4`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-bold">{booking.spotName}</h3>
-                    <p className={`mt-1 flex items-center gap-1 text-xs ${theme.text.secondary}`}>
-                      <MapPin className="h-3.5 w-3.5" />
-                      {booking.address}
-                    </p>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${STATUS_STYLES[booking.status]}`}
-                  >
-                    {booking.status}
-                  </span>
+          <div className="space-y-6">
+            {upcomingBookings.length > 0 && (
+              <div>
+                <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Upcoming
+                </h2>
+                <div className="space-y-3">
+                  {upcomingBookings.map((booking) => (
+                    <BookingCard
+                      key={booking.id}
+                      booking={booking}
+                      onEdit={(id) => navigate(`/bookings/${id}/edit`)}
+                      onCancel={setCancelTargetId}
+                    />
+                  ))}
                 </div>
-
-                <div className={`mt-3 flex items-center gap-2 text-xs ${theme.text.secondary}`}>
-                  <span>{booking.date}</span>
-                  <span aria-hidden="true">·</span>
-                  <span>{booking.timeRange}</span>
-                </div>
-
-                {booking.status === "upcoming" && (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    fullWidth={false}
-                    onClick={() => setCancelTargetId(booking.id)}
-                    className="mt-3"
-                  >
-                    <Ban className="h-3.5 w-3.5" />
-                    Cancel booking
-                  </Button>
-                )}
               </div>
-            ))}
+            )}
+
+            {pastBookings.length > 0 && (
+              <div>
+                <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Past
+                </h2>
+                <div className="space-y-3">
+                  {pastBookings.map((booking) => (
+                    <BookingCard
+                      key={booking.id}
+                      booking={booking}
+                      onEdit={(id) => navigate(`/bookings/${id}/edit`)}
+                      onCancel={setCancelTargetId}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </section>

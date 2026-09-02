@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Warehouse, MapPin, Plus, Pencil } from "lucide-react";
+import { Warehouse, MapPin, Plus, Pencil, Trash2 } from "lucide-react";
 import Button from "../components/button";
+import ConfirmDialog from "../components/confirmDialog";
 import { theme } from "../theme/theme";
-import { MOCK_HOSTINGS, type Hosting } from "../data/mockHostings.tsx";
+import { MOCK_HOSTINGS, hostingTitle, hostingSubtitle, type Hosting } from "../data/mockHostings";
 
 function Hostings() {
   const navigate = useNavigate();
   const [hostings, setHostings] = useState<Hosting[] | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     // TODO: replace with a real Supabase query, e.g.
@@ -15,6 +18,24 @@ function Hostings() {
     const timer = setTimeout(() => setHostings(MOCK_HOSTINGS), 300);
     return () => clearTimeout(timer);
   }, []);
+
+  const deleteTarget = hostings?.find((h) => h.id === deleteTargetId) ?? null;
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setIsDeleting(true);
+    try {
+      // TODO: replace with a real Supabase delete, e.g.
+      // await supabase.from("listings").delete().eq("id", deleteTargetId);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setHostings((prev) => prev?.filter((h) => h.id !== deleteTargetId) ?? prev);
+      setDeleteTargetId(null);
+    } catch (err) {
+      console.error("Failed to remove listing:", err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <main className={`min-h-screen ${theme.surface.page} ${theme.text.primary}`}>
@@ -58,10 +79,10 @@ function Hostings() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h3 className="text-sm font-bold">{hosting.title}</h3>
+                    <h3 className="text-sm font-bold">{hostingTitle(hosting)}</h3>
                     <p className={`mt-1 flex items-center gap-1 text-xs ${theme.text.secondary}`}>
                       <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span className="truncate">{hosting.address}</span>
+                      <span className="truncate">{hostingSubtitle(hosting)}</span>
                     </p>
                   </div>
                   <span
@@ -75,18 +96,29 @@ function Hostings() {
                   </span>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between">
-                  <p className={`text-xs ${theme.text.secondary}`}>
-                    {hosting.bookingsThisMonth} bookings this month
-                  </p>
-                  <button
+                <p className={`mt-3 text-xs ${theme.text.secondary}`}>
+                  {hosting.bookingsThisMonth} bookings this month
+                </p>
+
+                <div className="mt-4 flex gap-2">
+                  <Button
                     type="button"
-                    onClick={() => navigate(`/hostings/${hosting.id}/edit`)}
-                    className={`flex items-center gap-1 text-xs font-semibold ${theme.text.link}`}
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => navigate(`/host-onboarding/${hosting.id}`)}
                   >
                     <Pencil className="h-3.5 w-3.5" />
                     Edit
-                  </button>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setDeleteTargetId(hosting.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Remove
+                  </Button>
                 </div>
               </div>
             ))}
@@ -102,6 +134,18 @@ function Hostings() {
           </div>
         )}
       </section>
+
+      {deleteTarget && (
+        <ConfirmDialog
+          title="Remove this listing?"
+          description={`"${hostingTitle(deleteTarget)}" will be permanently removed and will no longer accept bookings. This can't be undone.`}
+          confirmLabel={isDeleting ? "Removing…" : "Remove listing"}
+          cancelLabel="Keep listing"
+          isLoading={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onClose={() => setDeleteTargetId(null)}
+        />
+      )}
     </main>
   );
 }
