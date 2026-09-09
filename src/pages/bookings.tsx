@@ -1,37 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CalendarCheck, MapPin, Ban, Pencil } from "lucide-react";
+import { onAuthStateChanged } from "firebase/auth";
 import Button from "../components/button";
 import ConfirmDialog from "../components/confirmDialog";
 import { theme } from "../theme/theme";
-
-interface Booking {
-  id: string;
-  spotName: string;
-  address: string;
-  date: string;
-  timeRange: string;
-  status: "upcoming" | "active" | "completed" | "cancelled";
-}
-
-const MOCK_BOOKINGS: Booking[] = [
-  {
-    id: "1",
-    spotName: "Covered spot near MG Road",
-    address: "12 Residency Rd, Bengaluru",
-    date: "Aug 28, 2026",
-    timeRange: "9:00 AM – 6:00 PM",
-    status: "upcoming",
-  },
-  {
-    id: "2",
-    spotName: "Driveway spot, Indiranagar",
-    address: "100ft Rd, Indiranagar, Bengaluru",
-    date: "Aug 20, 2026",
-    timeRange: "2:00 PM – 8:00 PM",
-    status: "completed",
-  },
-];
+import { getFirebaseAuth } from "../firebase/config";
+import { listMyBookings, cancelBooking, type Booking } from "../firebase/bookings";
 
 const STATUS_STYLES: Record<Booking["status"], string> = {
   upcoming: "bg-blue-50 text-blue-600",
@@ -80,7 +55,7 @@ function BookingCard({ booking, onEdit, onCancel }: BookingCardProps) {
         <div className="mt-4 flex gap-2">
           <Button type="button" variant="secondary" size="sm" onClick={() => onEdit(booking.id)}>
             <Pencil className="h-3.5 w-3.5" />
-            Edit 
+            Edit booking
           </Button>
           <Button
             type="button"
@@ -89,7 +64,7 @@ function BookingCard({ booking, onEdit, onCancel }: BookingCardProps) {
             onClick={() => onCancel(booking.id)}
           >
             <Ban className="h-3.5 w-3.5" />
-            Cancel 
+            Cancel booking
           </Button>
         </div>
       )}
@@ -100,12 +75,27 @@ function BookingCard({ booking, onEdit, onCancel }: BookingCardProps) {
 function Bookings() {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setBookings(MOCK_BOOKINGS), 300);
-    return () => clearTimeout(timer);
+    const auth = getFirebaseAuth();
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setBookings([]);
+        return;
+      }
+      try {
+        const rows = await listMyBookings(user.uid);
+        setBookings(rows);
+      } catch (err) {
+        console.error("Failed to load bookings:", err);
+        setLoadError("Couldn't load your bookings. Please try again.");
+        setBookings([]);
+      }
+    });
+    return unsubscribe;
   }, []);
 
   const cancelTarget = bookings?.find((b) => b.id === cancelTargetId) ?? null;
@@ -123,7 +113,7 @@ function Bookings() {
     if (!cancelTargetId) return;
     setIsCancelling(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await cancelBooking(cancelTargetId);
       setBookings((prev) =>
         prev
           ? prev.map((b) => (b.id === cancelTargetId ? { ...b, status: "cancelled" } : b))
@@ -132,6 +122,7 @@ function Bookings() {
       setCancelTargetId(null);
     } catch (err) {
       console.error("Failed to cancel booking:", err);
+      setLoadError("Couldn't cancel that booking. Please try again.");
     } finally {
       setIsCancelling(false);
     }
@@ -147,6 +138,12 @@ function Bookings() {
       </div>
 
       <section className="px-6 pb-24">
+        {loadError && (
+          <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {loadError}
+          </div>
+        )}
+
         {bookings === null && (
           <div className="space-y-3">
             {[0, 1].map((i) => (

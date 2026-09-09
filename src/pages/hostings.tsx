@@ -1,22 +1,37 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Warehouse, MapPin, Plus, Pencil, Trash2 } from "lucide-react";
+import { onAuthStateChanged } from "firebase/auth";
 import Button from "../components/button";
 import ConfirmDialog from "../components/confirmDialog";
 import { theme } from "../theme/theme";
-import { MOCK_HOSTINGS, hostingTitle, hostingSubtitle, type Hosting } from "../data/mockHostings";
+import { getFirebaseAuth } from "../firebase/config";
+import { listMyListings, deleteListing, hostingTitle, hostingSubtitle, type Hosting } from "../firebase/listings";
 
 function Hostings() {
   const navigate = useNavigate();
   const [hostings, setHostings] = useState<Hosting[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    // TODO: replace with a real Supabase query, e.g.
-    // const { data } = await supabase.from("listings").select("*").eq("host_id", user.id);
-    const timer = setTimeout(() => setHostings(MOCK_HOSTINGS), 300);
-    return () => clearTimeout(timer);
+    const auth = getFirebaseAuth();
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setHostings([]);
+        return;
+      }
+      try {
+        const rows = await listMyListings(user.uid);
+        setHostings(rows);
+      } catch (err) {
+        console.error("Failed to load listings:", err);
+        setLoadError("Couldn't load your listings. Please try again.");
+        setHostings([]);
+      }
+    });
+    return unsubscribe;
   }, []);
 
   const deleteTarget = hostings?.find((h) => h.id === deleteTargetId) ?? null;
@@ -25,13 +40,12 @@ function Hostings() {
     if (!deleteTargetId) return;
     setIsDeleting(true);
     try {
-      // TODO: replace with a real Supabase delete, e.g.
-      // await supabase.from("listings").delete().eq("id", deleteTargetId);
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await deleteListing(deleteTargetId);
       setHostings((prev) => prev?.filter((h) => h.id !== deleteTargetId) ?? prev);
       setDeleteTargetId(null);
     } catch (err) {
       console.error("Failed to remove listing:", err);
+      setLoadError("Couldn't remove that listing. Please try again.");
     } finally {
       setIsDeleting(false);
     }
@@ -49,6 +63,12 @@ function Hostings() {
       </div>
 
       <section className="px-6 pb-24">
+        {loadError && (
+          <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {loadError}
+          </div>
+        )}
+
         {hostings === null && (
           <div className="space-y-3">
             <div className={`h-28 animate-pulse rounded-2xl border ${theme.border.default} bg-slate-50`} />
@@ -73,10 +93,7 @@ function Hostings() {
         {hostings !== null && hostings.length > 0 && (
           <div className="space-y-3">
             {hostings.map((hosting) => (
-              <div
-                key={hosting.id}
-                className={`rounded-2xl border ${theme.border.default} p-4`}
-              >
+              <div key={hosting.id} className={`rounded-2xl border ${theme.border.default} p-4`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="text-sm font-bold">{hostingTitle(hosting)}</h3>

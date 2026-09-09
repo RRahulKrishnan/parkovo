@@ -19,7 +19,8 @@ import type {
   PhotosData,
   PricingData,
 } from "../types/listing";
-import { MOCK_HOSTINGS } from "../data/mockHostings";
+import { getFirebaseAuth } from "../firebase/config";
+import { getListing, createListing, updateListing } from "../firebase/listings";
 
 const TOTAL_STEPS = LISTING_STEPS.length;
 
@@ -40,16 +41,17 @@ function ListingFlow() {
   // starting empty.
   useEffect(() => {
     if (!id) return;
-    // TODO: replace with a real Supabase fetch, e.g.
-    // const { data } = await supabase.from("listings").select("*").eq("id", id).single();
-    const timer = setTimeout(() => {
-      const existing = MOCK_HOSTINGS.find((h) => h.id === id);
-      if (existing) {
-        setFormData(existing.listing);
-      }
-      setIsLoadingExisting(false);
-    }, 300);
-    return () => clearTimeout(timer);
+    getListing(id)
+      .then((existing) => {
+        if (existing) {
+          setFormData(existing.listing);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load listing:", err);
+        setSubmitError("Couldn't load that listing. Please try again.");
+      })
+      .finally(() => setIsLoadingExisting(false));
   }, [id]);
 
   const goBack = () => setStep((prev) => Math.max(prev - 1, 1));
@@ -86,37 +88,27 @@ function ListingFlow() {
     setIsSubmitting(true);
 
     try {
+      const user = getFirebaseAuth().currentUser;
+      if (!user) {
+        throw new Error("You need to be signed in to publish a listing.");
+      }
+
+      // Photos aren't persisted yet — they live in Firebase Storage, not
+      // this document, and that upload flow isn't wired in. finalData.photos
+      // is intentionally not sent here.
       if (isEditMode && id) {
-        // TODO: update the existing listing, e.g.
-        // await supabase.from("listings").update({
-        //   address: finalData.address,
-        //   about: finalData.about,
-        //   pricing: finalData.pricing,
-        //   amenities: finalData.amenities,
-        //   availability: finalData.availability,
-        //   // photos need separate upload handling — see photosStep.tsx
-        // }).eq("id", id);
-        await new Promise((resolve) => setTimeout(resolve, 900));
+        await updateListing(id, finalData);
       } else {
-        // TODO: create the listing, e.g.
-        // const payload = new FormData();
-        // payload.append("address", JSON.stringify(finalData.address));
-        // finalData.photos.files.forEach((file) => payload.append("photos", file));
-        // payload.append("about", JSON.stringify(finalData.about));
-        // payload.append("pricing", JSON.stringify(finalData.pricing));
-        // payload.append("amenities", JSON.stringify(finalData.amenities));
-        // payload.append("availability", JSON.stringify(finalData.availability));
-        // await api.createListing(payload);
-        await new Promise((resolve) => setTimeout(resolve, 900));
+        await createListing(user.uid, finalData);
       }
 
       navigate("/hostings");
     } catch (err: unknown) {
+      console.error("Listing submit failed:", err);
       const message =
         err instanceof Error
           ? err.message
           : `Couldn't ${isEditMode ? "save" : "publish"} your listing. Please try again.`;
-      console.error("Listing submit failed:", err);
       setSubmitError(message);
     } finally {
       setIsSubmitting(false);
