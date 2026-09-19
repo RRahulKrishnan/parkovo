@@ -2,6 +2,7 @@ import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { getFirestoreDb } from "./config";
 
 export interface UserProfile {
+  userId: string;
   fullName: string;
   email: string;
   phoneNumber: string;
@@ -18,6 +19,7 @@ export async function createUserProfile(uid: string, profile: UserProfile): Prom
   const db = getFirestoreDb();
   await setDoc(doc(db, "users", uid), {
     ...profile,
+    userId: uid,
     createdAt: serverTimestamp(),
   });
 }

@@ -16,12 +16,6 @@ interface PricingErrors {
   monthly?: string;
 }
 
-function toNumber(value: string): number | undefined {
-  if (!value.trim()) return undefined;
-  const n = Number(value);
-  return Number.isFinite(n) && n >= 0 ? n : undefined;
-}
-
 function PricingStep({ data, onNext, onBack }: PricingStepProps) {
   const [formData, setFormData] = useState<PricingData>(data);
   const [errors, setErrors] = useState<PricingErrors>({});

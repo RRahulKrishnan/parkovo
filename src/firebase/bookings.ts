@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, updateDoc, query, where, orderBy, Timestamp } from "firebase/firestore";
+import { addDoc, collection, doc, getDocs, serverTimestamp, updateDoc, query, where, Timestamp } from "firebase/firestore";
 import { getFirestoreDb } from "./config";
 
 export type BookingStatus = "upcoming" | "active" | "completed" | "cancelled";
@@ -62,13 +62,17 @@ function docToBooking(id: string, data: BookingDoc): Booking {
 
 export async function listMyBookings(renterId: string): Promise<Booking[]> {
   const db = getFirestoreDb();
-  const q = query(
-    collection(db, "bookings"),
-    where("renterId", "==", renterId),
-    orderBy("startAt", "desc")
-  );
+  // Avoid a renterId + startAt composite index; renter booking lists are
+  // small enough to order locally.
+  const q = query(collection(db, "bookings"), where("renterId", "==", renterId));
   const snap = await getDocs(q);
-  const bookings = snap.docs.map((d) => docToBooking(d.id, d.data() as BookingDoc));
+  const bookings = snap.docs
+    .sort((a, b) => {
+      const aStart = (a.data() as BookingDoc).startAt?.toMillis() ?? 0;
+      const bStart = (b.data() as BookingDoc).startAt?.toMillis() ?? 0;
+      return bStart - aStart;
+    })
+    .map((d) => docToBooking(d.id, d.data() as BookingDoc));
 
   // Self-healing: quietly persist the corrected status for anything we
   // just noticed is actually over, so other viewers (e.g. the host
@@ -93,4 +97,30 @@ export async function listMyBookings(renterId: string): Promise<Booking[]> {
 export async function cancelBooking(id: string): Promise<void> {
   const db = getFirestoreDb();
   await updateDoc(doc(db, "bookings", id), { status: "cancelled" });
+}
+
+export async function createBooking(input: CreateBookingInput): Promise<string> {
+  const ref = await addDoc(collection(getFirestoreDb(), "bookings"), {
+    listingId: input.listingId,
+    renterId: input.renterId,
+    spotName: input.spotName,
+    spotAddressLine1: input.address,
+    spotCity: input.address.split(",").at(-1)?.trim() ?? "",
+    startAt: Timestamp.fromDate(input.startAt),
+    endAt: Timestamp.fromDate(input.endAt),
+    amount: input.amount,
+    status: "upcoming" as BookingStatus,
+    createdAt: serverTimestamp(),
+  });
+  return ref.id;
+}
+
+export interface CreateBookingInput {
+  listingId: string;
+  renterId: string;
+  spotName: string;
+  address: string;
+  startAt: Date;
+  endAt: Date;
+  amount: number;
 }

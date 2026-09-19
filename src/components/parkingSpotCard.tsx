@@ -7,6 +7,7 @@ import type { ParkingSpotSummary } from "../types/search";
 interface ParkingSpotCardProps {
   spot: ParkingSpotSummary;
   onClick?: () => void;
+  embedded?: boolean;
 }
 
 const AMENITY_ICONS: Record<string, LucideIcon> = {
@@ -25,7 +26,7 @@ function estimateDriveMinutes(distanceKm: number) {
   return Math.max(1, Math.round((distanceKm / AVG_CITY_KMH) * 60));
 }
 
-function ParkingSpotCard({ spot, onClick }: ParkingSpotCardProps) {
+function ParkingSpotCard({ spot, onClick, embedded = false }: ParkingSpotCardProps) {
   const amenities = spot.amenities
     .map((id) => {
       const label = AMENITY_OPTIONS.find((option) => option.value === id)?.label;
@@ -44,7 +45,11 @@ function ParkingSpotCard({ spot, onClick }: ParkingSpotCardProps) {
       onClick={onClick}
       // was p-4 with a 28x28 image; widened by trimming outer padding and
       // giving the text column more room instead of growing the whole card
-      className={`flex w-full gap-4 rounded-2xl border p-3.5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md ${theme.border.default}`}
+      className={`flex w-full gap-4 p-3.5 text-left transition ${
+        embedded
+          ? "hover:bg-slate-50"
+          : `rounded-2xl border shadow-sm hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md ${theme.border.default}`
+      }`}
     >
       <img
         src={spot.imageUrl}

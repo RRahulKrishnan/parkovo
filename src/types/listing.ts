@@ -50,6 +50,7 @@ export interface PhotosData {
 // Maps 1:1 onto the "About this spot" / "How to get there" sections shown
 // on the ad detail page — same field names, same copy, no translation layer.
 export interface AboutData {
+  title: string;
   description: string;
   howToGetThere: string;
 }
@@ -70,6 +71,7 @@ export interface AvailabilityData {
   isOngoing: boolean;
   startDate: string;
   endDate: string;
+  maxBookingHours: number;
 }
 
 export interface ListingFormData {
@@ -95,6 +97,7 @@ export const EMPTY_LISTING_FORM: ListingFormData = {
     previewUrls: [],
   },
   about: {
+    title: "",
     description: "",
     howToGetThere: "",
   },
@@ -112,6 +115,7 @@ export const EMPTY_LISTING_FORM: ListingFormData = {
     isOngoing: true,
     startDate: "",
     endDate: "",
+    maxBookingHours: 23,
   },
 };
 

@@ -54,4 +54,21 @@ export const theme = {
     destructiveSolid:
       "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 focus:ring-red-500",
   },
+
+  // Find Parking "browse by place" carousel. Brand blue-600 surface,
+  // same radius/shadow as ParkingSpotCard.
+  carousel: {
+    frame:
+      "relative overflow-hidden rounded-2xl border border-blue-700 bg-blue-600 shadow-sm",
+    slide: "relative block h-44 w-full text-left text-white",
+    iconTile: "bg-white/15 text-white",
+    watermark: "text-white/10",
+    count: "bg-white text-blue-700",
+    subtitle: "text-white/85",
+    dotActive: "w-5 bg-white",
+    dotIdle: "w-1.5 bg-white/40 hover:bg-white/70",
+    // Inset: the frame's overflow-hidden would clip an outer ring.
+    focus:
+      "focus:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-white",
+  },
 } as const;

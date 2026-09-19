@@ -23,7 +23,7 @@ interface NominatimResult {
   lon: string;
 }
 
-// Falls back to Bengaluru, matching the mock spot data elsewhere in the app.
+// Falls back to Bengaluru until the renter chooses a search location.
 const DEFAULT_CENTER = { lat: 12.9716, lng: 77.5946 };
 const DEFAULT_ZOOM = 14;
 

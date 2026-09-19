@@ -8,4 +8,6 @@ export interface ParkingSpotDetail extends ParkingSpotSummary {
   hostRating?: number;
   reviewCount?: number;
   availableFrom?: string;
+  maxBookingHours?: number;
+  availableUntil?: string;
 }

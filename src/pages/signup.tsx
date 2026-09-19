@@ -115,6 +115,7 @@ function SignUp() {
     setAuthError(null);
     try {
       await createUserProfile(user.uid, {
+        userId: user.uid,
         fullName: user.displayName ?? formData.fullName,
         email: user.email ?? formData.email,
         phoneNumber: verifiedPhoneNumber,

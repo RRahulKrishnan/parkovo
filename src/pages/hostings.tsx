@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Warehouse, MapPin, Plus, Pencil, Trash2 } from "lucide-react";
+import { Warehouse, Plus, Pencil, Trash2 } from "lucide-react";
 import { onAuthStateChanged } from "firebase/auth";
 import Button from "../components/button";
 import ConfirmDialog from "../components/confirmDialog";
+import ParkingSpotCard from "../components/parkingSpotCard";
 import { theme } from "../theme/theme";
 import { getFirebaseAuth } from "../firebase/config";
-import { listMyListings, deleteListing, hostingTitle, hostingSubtitle, type Hosting } from "../firebase/listings";
+import { listMyListings, deleteListing, hostingTitle, hostingToParkingSpot, type Hosting } from "../firebase/listings";
 
 function Hostings() {
   const navigate = useNavigate();
@@ -93,31 +94,18 @@ function Hostings() {
         {hostings !== null && hostings.length > 0 && (
           <div className="space-y-3">
             {hostings.map((hosting) => (
-              <div key={hosting.id} className={`rounded-2xl border ${theme.border.default} p-4`}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-bold">{hostingTitle(hosting)}</h3>
-                    <p className={`mt-1 flex items-center gap-1 text-xs ${theme.text.secondary}`}>
-                      <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span className="truncate">{hostingSubtitle(hosting)}</span>
-                    </p>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                      hosting.status === "active"
-                        ? "bg-emerald-50 text-emerald-600"
-                        : "bg-slate-100 text-slate-500"
-                    }`}
-                  >
-                    {hosting.status}
-                  </span>
-                </div>
-
-                <p className={`mt-3 text-xs ${theme.text.secondary}`}>
-                  {hosting.bookingsThisMonth} bookings this month
-                </p>
-
-                <div className="mt-4 flex gap-2">
+              <div key={hosting.id} className={`overflow-hidden rounded-2xl border ${theme.border.default}`}>
+                <ParkingSpotCard
+                  spot={hostingToParkingSpot(hosting)}
+                  embedded
+                  onClick={() => navigate(`/hostings/${hosting.id}`)}
+                />
+                <div className="mx-4 border-t border-dashed border-slate-300" />
+                <div className="px-4 pb-4 pt-3">
+                  <p className={`mb-3 text-xs ${theme.text.secondary}`}>
+                    {hosting.bookingsThisMonth} bookings this month
+                  </p>
+                  <div className="flex gap-2">
                   <Button
                     type="button"
                     variant="secondary"
@@ -136,6 +124,7 @@ function Hostings() {
                     <Trash2 className="h-3.5 w-3.5" />
                     Remove
                   </Button>
+                  </div>
                 </div>
               </div>
             ))}

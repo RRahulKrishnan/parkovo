@@ -12,6 +12,7 @@ interface AboutStepProps {
 const DESCRIPTION_MIN_LENGTH = 20;
 
 interface AboutErrors {
+  title?: string;
   description?: string;
   howToGetThere?: string;
 }
@@ -20,7 +21,7 @@ function AboutStep({ data, onNext, onBack }: AboutStepProps) {
   const [formData, setFormData] = useState<AboutData>(data);
   const [errors, setErrors] = useState<AboutErrors>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (name in errors) {
@@ -31,6 +32,10 @@ function AboutStep({ data, onNext, onBack }: AboutStepProps) {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const validationErrors: AboutErrors = {};
+
+    if (!formData.title.trim()) {
+      validationErrors.title = "Give your parking spot a title";
+    }
 
     if (!formData.description.trim()) {
       validationErrors.description = "Describe the spot for renters";
@@ -56,6 +61,31 @@ function AboutStep({ data, onNext, onBack }: AboutStepProps) {
         <p className={`mt-1 text-sm ${theme.text.secondary}`}>
           This shows up as "About this spot" on your listing.
         </p>
+      </div>
+
+      <div>
+        <label htmlFor="title" className={`mb-1.5 block text-sm font-semibold ${theme.text.primary}`}>
+          Listing title
+        </label>
+        <input
+          id="title"
+          name="title"
+          type="text"
+          maxLength={80}
+          placeholder="e.g. Covered parking near MG Road"
+          value={formData.title}
+          onChange={handleChange}
+          className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition ${
+            errors.title
+              ? `${theme.border.error} ${theme.ring.focusError}`
+              : `${theme.border.default} ${theme.border.focus} ${theme.ring.focus}`
+          } focus:ring-1`}
+        />
+        {errors.title && (
+          <p role="alert" className={`mt-1 text-xs ${theme.text.error}`}>
+            {errors.title}
+          </p>
+        )}
       </div>
 
       <div>

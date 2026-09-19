@@ -10,6 +10,7 @@ import Bookings from "./pages/bookings";
 import Hostings from "./pages/hostings";
 import Profile from "./pages/profile";
 import AppLayout from "./layouts/appLayout";
+import BookingConfirmation from "./pages/bookingConfirmation";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
         </Route>
 
         <Route path="/find-parking/:id" element={<ParkingSpotDetail />} />
+        <Route path="/booking/confirm" element={<BookingConfirmation />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import Button from "../../components/button";
 import { theme } from "../../theme/theme";
 import AvailabilityCalendar from "../../components/availabilityCalendar";
+import SliderControl from "../../components/sliderControl";
 import type { AvailabilityData } from "../../types/listing";
 
 interface AvailabilityStepProps {
@@ -57,6 +58,15 @@ function AvailabilityStep({ data, onSubmit, onBack, isSubmitting }: Availability
           setError(undefined);
         }}
         error={error}
+      />
+
+      <SliderControl
+        label="Maximum hourly booking"
+        value={availability.maxBookingHours ?? 23}
+        min={1}
+        max={23}
+        onChange={(maxBookingHours) => setAvailability((prev) => ({ ...prev, maxBookingHours }))}
+        formatValue={(hours) => `${hours} hour${hours === 1 ? "" : "s"}`}
       />
 
       <div className="flex gap-3">

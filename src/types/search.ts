@@ -1,4 +1,5 @@
 import type { AmenityId, SpotSize } from "./listing";
+import type { PlaceCategory } from "./placeCategory";
 
 export type SpotStatus = "available" | "available_soon" | "booked";
 
@@ -45,6 +46,7 @@ export interface ParkingSpotSummary {
   spotSize: SpotSize;
   status: SpotStatus;
   rating?: number;
+  nearbyPlaces?: PlaceCategory[];
 }
 
 export interface SearchFilters {
