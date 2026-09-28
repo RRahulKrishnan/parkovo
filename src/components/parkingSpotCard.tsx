@@ -74,6 +74,11 @@ function ParkingSpotCard({ spot, onClick, embedded = false }: ParkingSpotCardPro
           <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClass}`} />
           {statusMeta.label}
         </span>
+        {spot.availableAgainAt && (
+          <p className="mt-1 text-[11px] font-medium text-amber-700">
+            Opens {new Date(spot.availableAgainAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+          </p>
+        )}
 
         <p className={`mt-1.5 flex items-center gap-1 text-xs truncate ${theme.text.muted}`}>
           <MapPin className="h-3.5 w-3.5 flex-shrink-0" />

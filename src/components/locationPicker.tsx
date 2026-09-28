@@ -148,7 +148,10 @@ function LocationPicker({ initialCenter, onClose, onConfirm }: LocationPickerPro
     setLabel(result.display_name);
     setSuggestions([]);
     setQuery("");
-    mapRef.current?.setView([lat, lng], DEFAULT_ZOOM);
+    // Keep the fixed locator pin visually anchored while the map moves to
+    // the selected search result. This makes the selected address and pin
+    // unambiguously refer to the same coordinates.
+    mapRef.current?.flyTo([lat, lng], DEFAULT_ZOOM, { duration: 0.45 });
   };
 
   const handleUseCurrentLocation = () => {

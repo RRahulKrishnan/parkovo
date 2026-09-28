@@ -11,6 +11,7 @@ import Hostings from "./pages/hostings";
 import Profile from "./pages/profile";
 import AppLayout from "./layouts/appLayout";
 import BookingConfirmation from "./pages/bookingConfirmation";
+import { RequireAuth, RequireCheckout } from "./components/routeGuards";
 
 function App() {
   return (
@@ -20,18 +21,18 @@ function App() {
         <Route path="/role" element={<SelectRole />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
-        <Route path="/host-onboarding" element={<HostOnboarding />} />
-        <Route path="/host-onboarding/:id" element={<HostOnboarding />} />
+        <Route path="/host-onboarding" element={<RequireAuth><HostOnboarding /></RequireAuth>} />
+        <Route path="/host-onboarding/:id" element={<RequireAuth><HostOnboarding /></RequireAuth>} />
 
-        <Route element={<AppLayout />}>
+        <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
           <Route path="/find-parking" element={<FindParking />} />
           <Route path="/bookings" element={<Bookings />} />
           <Route path="/hostings" element={<Hostings />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
 
-        <Route path="/find-parking/:id" element={<ParkingSpotDetail />} />
-        <Route path="/booking/confirm" element={<BookingConfirmation />} />
+        <Route path="/find-parking/:id" element={<RequireAuth><ParkingSpotDetail /></RequireAuth>} />
+        <Route path="/booking/confirm" element={<RequireAuth><RequireCheckout><BookingConfirmation /></RequireCheckout></RequireAuth>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

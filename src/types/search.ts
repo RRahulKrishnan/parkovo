@@ -47,6 +47,7 @@ export interface ParkingSpotSummary {
   status: SpotStatus;
   rating?: number;
   nearbyPlaces?: PlaceCategory[];
+  availableAgainAt?: string;
 }
 
 export interface SearchFilters {

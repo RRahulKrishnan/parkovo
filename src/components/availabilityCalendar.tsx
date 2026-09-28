@@ -9,6 +9,9 @@ interface AvailabilityCalendarProps {
   onChangeRange: (startDate: string, endDate: string) => void;
   onChangeOngoing: (isOngoing: boolean) => void;
   error?: string;
+  /** Booking mode reuses the same calendar without host-listing controls. */
+  mode?: "listing" | "booking";
+  disabledDates?: string[];
 }
 
 const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -45,6 +48,8 @@ function AvailabilityCalendar({
   onChangeRange,
   onChangeOngoing,
   error,
+  mode = "listing",
+  disabledDates = [],
 }: AvailabilityCalendarProps) {
   const [monthCursor, setMonthCursor] = useState(() => {
     const base = startDate ? new Date(startDate) : new Date();
@@ -57,6 +62,11 @@ function AvailabilityCalendar({
   const handleDayClick = (date: Date) => {
     if (date < today) return;
     const clickedISO = toISODate(date);
+
+    if (mode === "booking") {
+      onChangeRange(clickedISO, clickedISO);
+      return;
+    }
 
     // No start yet, or a full range already chosen -> begin a new selection.
     if (!startDate || (startDate && endDate)) {
@@ -77,7 +87,7 @@ function AvailabilityCalendar({
 
   return (
     <div className="space-y-4">
-      <label className="flex items-center justify-between rounded-lg border px-4 py-3 border-slate-300">
+      {mode === "listing" && <label className="flex items-center justify-between rounded-lg border px-4 py-3 border-slate-300">
         <span>
           <span className={`block text-sm font-semibold ${theme.text.primary}`}>
             Host indefinitely
@@ -92,9 +102,9 @@ function AvailabilityCalendar({
           onChange={(e) => onChangeOngoing(e.target.checked)}
           className="h-5 w-5 accent-blue-600"
         />
-      </label>
+      </label>}
 
-      <div className={isOngoing ? "opacity-50 pointer-events-none" : ""}>
+      <div className={mode === "listing" && isOngoing ? "opacity-50 pointer-events-none" : ""}>
         <div className="flex items-center justify-between mb-3">
           <button
             type="button"
@@ -128,6 +138,7 @@ function AvailabilityCalendar({
             if (!date) return <span key={`empty-${i}`} />;
             const iso = toISODate(date);
             const isPast = date < today;
+            const isDisabled = isPast || disabledDates.includes(iso);
             const isStart = iso === startDate;
             const isEnd = iso === endDate;
             const inRange = isInRange(iso);
@@ -136,10 +147,10 @@ function AvailabilityCalendar({
               <button
                 key={iso}
                 type="button"
-                disabled={isPast}
+                disabled={isDisabled}
                 onClick={() => handleDayClick(date)}
                 className={`h-9 w-9 mx-auto flex items-center justify-center text-sm rounded-full transition ${
-                  isPast
+                  isDisabled
                     ? "text-slate-300 cursor-not-allowed"
                     : isStart || isEnd
                       ? "bg-blue-600 text-white font-semibold"
@@ -155,7 +166,9 @@ function AvailabilityCalendar({
         </div>
       </div>
 
-      {!isOngoing && (
+      {mode === "booking" ? (
+        <p className={`text-xs ${theme.text.muted}`}>{startDate ? `Selected: ${startDate}` : "Choose a parking date"}</p>
+      ) : !isOngoing && (
         <p className={`text-xs ${theme.text.muted}`}>
           {startDate && endDate
             ? `Listed from ${startDate} to ${endDate}`

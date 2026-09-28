@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { onAuthStateChanged, signOut, updateProfile as updateAuthProfile, type User } from "firebase/auth";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { ChevronRight, LogOut, UserCircle2, Check, X as XIcon } from "lucide-react";
+import { deleteUser, onAuthStateChanged, signOut, updateProfile as updateAuthProfile, type User } from "firebase/auth";
+import { collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
+import { ChevronRight, LogOut, UserCircle2, Check, X as XIcon, Trash2 } from "lucide-react";
 import { theme } from "../theme/theme";
 import Button from "../components/button";
 import { getFirebaseAuth, getFirestoreDb } from "../firebase/config";
@@ -27,6 +27,9 @@ function Profile() {
   const [nameDraft, setNameDraft] = useState("");
   const [nameError, setNameError] = useState<string | undefined>();
   const [isSavingName, setIsSavingName] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteEmail, setDeleteEmail] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
@@ -94,13 +97,35 @@ function Profile() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!authUser || deleteEmail.trim().toLowerCase() !== authUser.email?.toLowerCase()) {
+      setDeleteError("Enter the email address used to sign in exactly.");
+      return;
+    }
+    setIsDeletingAccount(true); setDeleteError(null);
+    try {
+      const db = getFirestoreDb();
+      const [listings, bookings] = await Promise.all([
+        getDocs(query(collection(db, "listings"), where("hostId", "==", authUser.uid))),
+        getDocs(query(collection(db, "bookings"), where("renterId", "==", authUser.uid))),
+      ]);
+      await Promise.all([...listings.docs, ...bookings.docs].map((snapshot) => deleteDoc(snapshot.ref)));
+      await deleteDoc(doc(db, "users", authUser.uid));
+      await deleteUser(authUser);
+      navigate("/");
+    } catch (err: unknown) {
+      console.error("Failed to delete account:", err);
+      setDeleteError("We couldn't delete your account. Please sign in again and retry; Firebase may require a recent sign-in for this action.");
+    } finally { setIsDeletingAccount(false); }
+  };
+
   const displayName = profile?.fullName || authUser?.displayName || "Your account";
   const email = profile?.email || authUser?.email || "";
   const phoneNumber = profile?.phoneNumber || authUser?.phoneNumber || "";
 
   return (
     <main className={`min-h-screen ${theme.surface.page} ${theme.text.primary}`}>
-      <div className="px-6 pt-14 pb-4">
+      <div className="px-6 pt-8 pb-4">
         <h1 className="text-2xl font-extrabold tracking-tight">Profile</h1>
       </div>
 
@@ -185,6 +210,14 @@ function Profile() {
           <LogOut className="h-4 w-4" />
           Log out
         </button>
+
+        <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+          <div className="flex gap-3"><Trash2 className="mt-0.5 h-5 w-5 shrink-0 text-red-600" /><div><h2 className="font-bold text-red-900">Delete account</h2><p className="mt-1 text-sm text-red-800">This permanently removes your profile, listings, and renter bookings.</p></div></div>
+          <label className="mt-3 block text-xs font-semibold text-red-900">Enter your login email to confirm</label>
+          <input value={deleteEmail} onChange={(event) => { setDeleteEmail(event.target.value); setDeleteError(null); }} type="email" placeholder={email || "you@example.com"} className="mt-1.5 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-sm outline-none focus:border-red-500" />
+          {deleteError && <p role="alert" className="mt-2 text-xs text-red-700">{deleteError}</p>}
+          <button type="button" disabled={isDeletingAccount || !deleteEmail} onClick={handleDeleteAccount} className="mt-3 w-full rounded-lg bg-red-600 px-3 py-2.5 text-sm font-bold text-white disabled:opacity-60">{isDeletingAccount ? "Deleting account…" : "Permanently delete account"}</button>
+        </div>
       </section>
     </main>
   );

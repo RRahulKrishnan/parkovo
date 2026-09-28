@@ -99,7 +99,22 @@ export async function cancelBooking(id: string): Promise<void> {
   await updateDoc(doc(db, "bookings", id), { status: "cancelled" });
 }
 
+export interface BookingInterval {
+  startAt: Date;
+  endAt: Date;
+}
+
+/** 30 minutes between rentals lets the departing renter retrieve their car. */
+export const BOOKING_BUFFER_MS = 30 * 60 * 1000;
+
 export async function createBooking(input: CreateBookingInput): Promise<string> {
+  const conflicts = await listActiveBookingIntervals(input.listingId);
+  const hasConflict = conflicts.some(({ startAt, endAt }) =>
+    input.startAt < new Date(endAt.getTime() + BOOKING_BUFFER_MS) && input.endAt > startAt
+  );
+  if (hasConflict) {
+    throw new Error("That time is no longer available. Please choose a time after the 30-minute turnover window.");
+  }
   const ref = await addDoc(collection(getFirestoreDb(), "bookings"), {
     listingId: input.listingId,
     renterId: input.renterId,
@@ -113,6 +128,31 @@ export async function createBooking(input: CreateBookingInput): Promise<string> 
     createdAt: serverTimestamp(),
   });
   return ref.id;
+}
+
+export async function listActiveBookingIntervals(listingId: string): Promise<BookingInterval[]> {
+  const snap = await getDocs(query(collection(getFirestoreDb(), "bookings"), where("listingId", "==", listingId)));
+  return snap.docs.flatMap((docSnap) => {
+    const data = docSnap.data() as BookingDoc;
+    if (data.status === "cancelled" || !data.startAt || !data.endAt) return [];
+    const startAt = data.startAt.toDate();
+    const endAt = data.endAt.toDate();
+    return endAt.getTime() > Date.now() ? [{ startAt, endAt }] : [];
+  });
+}
+
+export function nextAvailableAt(intervals: BookingInterval[], from = new Date()): Date | null {
+  const current = new Date(from);
+  const active = intervals
+    .filter(({ endAt }) => endAt.getTime() + BOOKING_BUFFER_MS > current.getTime())
+    .sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
+  for (const interval of active) {
+    if (current < interval.startAt) break;
+    const turnoverEnd = new Date(interval.endAt.getTime() + BOOKING_BUFFER_MS);
+    if (current < turnoverEnd) current.setTime(turnoverEnd.getTime());
+  }
+  // A future reservation must not make an otherwise free spot look booked.
+  return current.getTime() > from.getTime() ? current : null;
 }
 
 export interface CreateBookingInput {

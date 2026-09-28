@@ -130,7 +130,7 @@ function Bookings() {
 
   return (
     <main className={`min-h-screen ${theme.surface.page} ${theme.text.primary}`}>
-      <div className="px-6 pt-14 pb-4">
+      <div className="px-6 pt-8 pb-4">
         <h1 className="text-2xl font-extrabold tracking-tight">Bookings</h1>
         <p className={`mt-1 text-sm ${theme.text.secondary}`}>
           Spots you've booked, upcoming and past.

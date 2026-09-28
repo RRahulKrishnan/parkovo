@@ -43,8 +43,12 @@ function ListingFlow() {
     if (!id) return;
     getListing(id)
       .then((existing) => {
-        if (existing) {
+        const user = getFirebaseAuth().currentUser;
+        if (existing && user?.uid === existing.hostId) {
           setFormData(existing.listing);
+        } else {
+          setSubmitError("You don't have permission to edit that listing.");
+          navigate("/hostings", { replace: true });
         }
       })
       .catch((err) => {
@@ -52,7 +56,7 @@ function ListingFlow() {
         setSubmitError("Couldn't load that listing. Please try again.");
       })
       .finally(() => setIsLoadingExisting(false));
-  }, [id]);
+  }, [id, navigate]);
 
   const goBack = () => setStep((prev) => Math.max(prev - 1, 1));
 
@@ -93,13 +97,10 @@ function ListingFlow() {
         throw new Error("You need to be signed in to publish a listing.");
       }
 
-      // Photos aren't persisted yet — they live in Firebase Storage, not
-      // this document, and that upload flow isn't wired in. finalData.photos
-      // is intentionally not sent here.
       if (isEditMode && id) {
-        await updateListing(id, finalData);
+        await updateListing(id, finalData, "active", finalData.photos.files);
       } else {
-        await createListing(user.uid, finalData);
+        await createListing(user.uid, finalData, finalData.photos.files);
       }
 
       navigate("/hostings");

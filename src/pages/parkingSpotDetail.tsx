@@ -5,8 +5,11 @@ import { theme } from "../theme/theme";
 import { AMENITY_OPTIONS } from "../types/listing";
 import { STATUS_META } from "../types/search";
 import { getParkingSpot } from "../firebase/listings";
+import { listParkingSpots } from "../firebase/listings";
 import { isSpotBooked, savePendingCheckout } from "../types/checkout";
 import type { ParkingSpotDetail } from "../types/spotDetail";
+import type { ParkingSpotSummary } from "../types/search";
+import CompactSpotCard from "../components/compactSpotCard";
 
 type RentalPeriod = "hourly" | "daily" | "weekly" | "monthly";
 const PERIOD_LABEL: Record<RentalPeriod, string> = { hourly: "/ hour", daily: "/ day", weekly: "/ week", monthly: "/ month" };
@@ -16,13 +19,15 @@ function ParkingSpotDetailPage() {
   const navigate = useNavigate();
   const [spot, setSpot] = useState<ParkingSpotDetail | null | undefined>(undefined);
   const [period, setPeriod] = useState<RentalPeriod>("hourly");
+  const [recommendations, setRecommendations] = useState<ParkingSpotSummary[]>([]);
 
   useEffect(() => {
     if (!id) { setSpot(null); return; }
     let mounted = true;
     getParkingSpot(id)
       .then((result) => {
-        if (!mounted || !result) return;
+        if (!mounted) return;
+        if (!result) { setSpot(null); return; }
         // Overlay the client-side "just booked" flag from checkout.ts,
         // same as findParking.tsx does, so a spot booked moments ago
         // shows correctly without waiting on a fresh Firestore read.
@@ -32,6 +37,9 @@ function ParkingSpotDetailPage() {
         console.error("Failed to load parking spot:", error);
         if (mounted) setSpot(null);
       });
+    listParkingSpots().then((spots) => {
+      if (mounted) setRecommendations(spots.filter((candidate) => candidate.id !== id).sort((a, b) => a.distanceKm - b.distanceKm).slice(0, 8));
+    }).catch((error) => console.error("Failed to load nearby spots:", error));
     return () => { mounted = false; };
   }, [id]);
 
@@ -104,6 +112,12 @@ function ParkingSpotDetailPage() {
         <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${status.badgeClass}`}>
           {status.label}
         </span>
+        {spot.availableAgainAt && (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p className="font-semibold">Open for booking again</p>
+            <p className="mt-0.5 text-xs">{new Date(spot.availableAgainAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })} (includes a 30-minute turnover buffer)</p>
+          </div>
+        )}
 
         {periods.length > 1 && (
           <div className="mt-5 flex gap-2">
@@ -156,6 +170,15 @@ function ParkingSpotDetailPage() {
 
         {spot.hostName && (
           <p className={`mt-6 text-sm ${theme.text.secondary}`}>Hosted by {spot.hostName}</p>
+        )}
+
+        {recommendations.length > 0 && (
+          <section className="mt-8">
+            <div className="flex items-baseline justify-between"><h3 className="text-base font-bold">Nearby parking spots</h3><span className={`text-xs ${theme.text.muted}`}>Explore nearby</span></div>
+            <div className="-mx-6 mt-3 flex snap-x gap-3 overflow-x-auto px-6 pb-2">
+              {recommendations.map((candidate) => <CompactSpotCard key={candidate.id} spot={candidate} onClick={() => navigate(`/find-parking/${candidate.id}`)} />)}
+            </div>
+          </section>
         )}
       </section>
 

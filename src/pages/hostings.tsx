@@ -54,7 +54,7 @@ function Hostings() {
 
   return (
     <main className={`min-h-screen ${theme.surface.page} ${theme.text.primary}`}>
-      <div className="px-6 pt-14 pb-4 flex items-start justify-between gap-3">
+      <div className="px-6 pt-8 pb-4 flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">Hostings</h1>
           <p className={`mt-1 text-sm ${theme.text.secondary}`}>

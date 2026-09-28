@@ -27,6 +27,11 @@ function CompactSpotCard({ spot, onClick }: CompactSpotCardProps) {
           <MapPin className="h-3 w-3 flex-shrink-0" />
           {spot.distanceKm.toFixed(1)} km
         </p>
+        {spot.availableAgainAt && (
+          <p className="mt-1 truncate text-[10px] font-medium text-amber-700">
+            Opens {new Date(spot.availableAgainAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+          </p>
+        )}
         <div className="mt-1.5 flex items-center justify-between">
           <p className="text-sm font-bold text-blue-600">
             ₹{spot.pricing.hourly}

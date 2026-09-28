@@ -10,4 +10,5 @@ export interface ParkingSpotDetail extends ParkingSpotSummary {
   availableFrom?: string;
   maxBookingHours?: number;
   availableUntil?: string;
+  availableAgainAt?: string;
 }

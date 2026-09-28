@@ -13,12 +13,14 @@ import {
 } from "firebase/firestore";
 import { getFirestoreDb } from "./config";
 import { uploadListingPhotos } from "../firebase/storage";
+import { listActiveBookingIntervals, nextAvailableAt } from "./bookings";
 import type { ListingFormData } from "../types/listing";
 import type { ParkingSpotDetail } from "../types/spotDetail";
 import type { ParkingSpotSummary } from "../types/search";
 
 export interface Hosting {
   id: string;
+  hostId: string;
   status: "active" | "paused";
   bookingsThisMonth: number;
   listing: ListingFormData;
@@ -40,6 +42,7 @@ interface ListingDoc {
 function docToHosting(id: string, data: ListingDoc, bookingsThisMonth: number): Hosting {
   return {
     id,
+    hostId: data.hostId,
     status: data.status,
     bookingsThisMonth,
     listing: {
@@ -229,7 +232,13 @@ export function hostingToParkingSpot(hosting: Hosting): ParkingSpotSummary {
 /** Public Explore data, sourced exclusively from Firestore active listings. */
 export async function listParkingSpots(): Promise<ParkingSpotSummary[]> {
   const listings = await listActiveListings();
-  return listings.map(hostingToParkingSpot);
+  return Promise.all(listings.map(async (listing) => {
+    const spot = hostingToParkingSpot(listing);
+    const availableAgainAt = nextAvailableAt(await listActiveBookingIntervals(listing.id));
+    return availableAgainAt
+      ? { ...spot, status: "booked" as const, availableAgainAt: availableAgainAt.toISOString() }
+      : spot;
+  }));
 }
 
 /** Parking-detail data, sourced exclusively from its Firestore listing. */
@@ -242,11 +251,14 @@ export async function getParkingSpot(id: string): Promise<ParkingSpotDetail | nu
   const hosting = docToHosting(snap.id, snap.data() as ListingDoc, 0);
   if (!hosting || hosting.status !== "active") return null;
   const spot = hostingToParkingSpot(hosting);
+  const availableAgainAt = nextAvailableAt(await listActiveBookingIntervals(id));
   const images = hosting.listing.photos.previewUrls.length > 0
     ? hosting.listing.photos.previewUrls
     : [FALLBACK_IMAGE];
   return {
     ...spot,
+    status: availableAgainAt ? "booked" : spot.status,
+    availableAgainAt: availableAgainAt?.toISOString(),
     images,
     description: hosting.listing.about.description,
     howToGetThere: hosting.listing.about.howToGetThere,
