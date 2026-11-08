@@ -10,9 +10,7 @@ import {
 
 import { theme } from "../theme/theme";
 import ParkingSpotCard from "../components/parkingSpotCard";
-import PromoCarousel, {
-  type CategorySlide,
-} from "../components/promoCarousel";
+import LocationBrowseCarousel from "../components/locationBrowseCarousel";
 import FilterSheet from "../components/filterSheet";
 import LocationPicker, {
   type LocationResult,
@@ -97,21 +95,6 @@ function FindParking() {
     [spots, filters]
   );
 
-  // One slide per place category that has at least one matching spot, so
-  // a slide never leads to an empty list. Counts respect active filters.
-  const slides = useMemo<CategorySlide[]>(
-    () =>
-      PLACE_CATEGORY_OPTIONS.map((option) => ({
-        category: option.value,
-        title: option.promoTitle,
-        subtitle: option.promoSubtitle,
-        spotCount: filteredSpots.filter((spot) =>
-          spot.nearbyPlaces?.includes(option.value)
-        ).length,
-      })).filter((slide) => slide.spotCount > 0),
-    [filteredSpots]
-  );
-
   const visibleSpots = useMemo(
     () =>
       category
@@ -126,8 +109,8 @@ function FindParking() {
     (option) => option.value === category
   );
 
-  const handleSlideClick = (slide: CategorySlide) => {
-    setCategory(slide.category);
+  const handleCategorySelect = (nextCategory: PlaceCategory) => {
+    setCategory(nextCategory);
     // Wait for the list to re-render, then bring it into view.
     requestAnimationFrame(() =>
       resultsRef.current?.scrollIntoView({
@@ -188,10 +171,10 @@ function FindParking() {
       {/* Content */}
       <section className="flex-1 px-4 pb-28">
         {/* Browse by place (renders nothing until a spot is tagged) */}
-        <PromoCarousel
+        <LocationBrowseCarousel
           className="mb-4"
-          slides={slides}
-          onSlideClick={handleSlideClick}
+          spots={filteredSpots}
+          onSelect={handleCategorySelect}
         />
 
         {/* Error */}

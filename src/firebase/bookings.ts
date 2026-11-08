@@ -5,6 +5,7 @@ export type BookingStatus = "upcoming" | "active" | "completed" | "cancelled";
 
 export interface Booking {
   id: string;
+  listingId: string;
   spotName: string;
   address: string;
   date: string;
@@ -52,6 +53,7 @@ function docToBooking(id: string, data: BookingDoc): Booking {
   const endAt = data.endAt.toDate();
   return {
     id,
+    listingId: data.listingId,
     spotName: data.spotAddressLine1 || "Parking spot",
     address: data.spotCity ?? "",
     date: DATE_FORMATTER.format(startAt),
@@ -115,7 +117,8 @@ export async function createBooking(input: CreateBookingInput): Promise<string> 
   if (hasConflict) {
     throw new Error("That time is no longer available. Please choose a time after the 30-minute turnover window.");
   }
-  const ref = await addDoc(collection(getFirestoreDb(), "bookings"), {
+  const db = getFirestoreDb();
+  const ref = await addDoc(collection(db, "bookings"), {
     listingId: input.listingId,
     renterId: input.renterId,
     spotName: input.spotName,
@@ -127,6 +130,16 @@ export async function createBooking(input: CreateBookingInput): Promise<string> 
     status: "upcoming" as BookingStatus,
     createdAt: serverTimestamp(),
   });
+  const unavailableUntil = new Date(Math.max(
+    input.endAt.getTime() + BOOKING_BUFFER_MS,
+    ...conflicts.map(({ endAt }) => endAt.getTime() + BOOKING_BUFFER_MS)
+  ));
+  // Explore can read this safe availability snapshot without needing access
+  // to another renter's booking records.
+  await updateDoc(doc(db, "listings", input.listingId), {
+    bookingStatus: "booked",
+    bookingUnavailableUntil: Timestamp.fromDate(unavailableUntil),
+  }).catch((error) => console.warn("Couldn't update the public booking snapshot:", error));
   return ref.id;
 }
 

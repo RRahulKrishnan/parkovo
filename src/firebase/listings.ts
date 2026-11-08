@@ -17,11 +17,14 @@ import { listActiveBookingIntervals, nextAvailableAt } from "./bookings";
 import type { ListingFormData } from "../types/listing";
 import type { ParkingSpotDetail } from "../types/spotDetail";
 import type { ParkingSpotSummary } from "../types/search";
+import { inferPlaceCategories } from "../types/placeCategory";
 
 export interface Hosting {
   id: string;
   hostId: string;
   status: "active" | "paused";
+  bookingStatus?: "booked";
+  bookingUnavailableUntil?: Date;
   bookingsThisMonth: number;
   listing: ListingFormData;
 }
@@ -35,6 +38,8 @@ interface ListingDoc {
   amenities: ListingFormData["amenities"];
   availability: ListingFormData["availability"];
   photoUrls?: string[];
+  bookingStatus?: "booked";
+  bookingUnavailableUntil?: Timestamp;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -44,6 +49,8 @@ function docToHosting(id: string, data: ListingDoc, bookingsThisMonth: number): 
     id,
     hostId: data.hostId,
     status: data.status,
+    bookingStatus: data.bookingStatus,
+    bookingUnavailableUntil: data.bookingUnavailableUntil?.toDate(),
     bookingsThisMonth,
     listing: {
       address: data.address,
@@ -216,6 +223,18 @@ const FALLBACK_IMAGE =
 
 export function hostingToParkingSpot(hosting: Hosting): ParkingSpotSummary {
   const { listing } = hosting;
+  const nearbyPlaces = inferPlaceCategories([
+    listing.about.title,
+    listing.about.description,
+    listing.about.howToGetThere,
+    listing.address.line1,
+    listing.address.line2,
+    listing.address.city,
+  ].filter(Boolean).join(" "));
+  const isBooked = hosting.status !== "active" || (
+    hosting.bookingStatus === "booked" &&
+    Boolean(hosting.bookingUnavailableUntil && hosting.bookingUnavailableUntil.getTime() > Date.now())
+  );
   return {
     id: hosting.id,
     title: listingTitle(listing),
@@ -225,7 +244,11 @@ export function hostingToParkingSpot(hosting: Hosting): ParkingSpotSummary {
     imageUrl: listing.photos.previewUrls[0] || FALLBACK_IMAGE,
     amenities: listing.amenities.amenities,
     spotSize: listing.amenities.spotSize || "compact",
-    status: hosting.status === "active" ? "available" : "booked",
+    status: isBooked ? "booked" : "available",
+    availableAgainAt: isBooked && hosting.bookingUnavailableUntil
+      ? hosting.bookingUnavailableUntil.toISOString()
+      : undefined,
+    nearbyPlaces,
   };
 }
 
@@ -234,10 +257,18 @@ export async function listParkingSpots(): Promise<ParkingSpotSummary[]> {
   const listings = await listActiveListings();
   return Promise.all(listings.map(async (listing) => {
     const spot = hostingToParkingSpot(listing);
-    const availableAgainAt = nextAvailableAt(await listActiveBookingIntervals(listing.id));
-    return availableAgainAt
-      ? { ...spot, status: "booked" as const, availableAgainAt: availableAgainAt.toISOString() }
-      : spot;
+    try {
+      const availableAgainAt = nextAvailableAt(await listActiveBookingIntervals(listing.id));
+      return availableAgainAt
+        ? { ...spot, status: "booked" as const, availableAgainAt: availableAgainAt.toISOString() }
+        : spot;
+    } catch (error) {
+      // Booking records are commonly private to the host/renter. Explore
+      // must still show the public listing when that optional enrichment is
+      // denied by Firestore rules.
+      console.warn(`Couldn't load availability for listing ${listing.id}:`, error);
+      return spot;
+    }
   }));
 }
 
@@ -251,14 +282,27 @@ export async function getParkingSpot(id: string): Promise<ParkingSpotDetail | nu
   const hosting = docToHosting(snap.id, snap.data() as ListingDoc, 0);
   if (!hosting || hosting.status !== "active") return null;
   const spot = hostingToParkingSpot(hosting);
-  const availableAgainAt = nextAvailableAt(await listActiveBookingIntervals(id));
+  let availableAgainAt: Date | null = null;
+  try {
+    availableAgainAt = nextAvailableAt(await listActiveBookingIntervals(id));
+  } catch (error) {
+    console.warn(`Couldn't load availability for listing ${id}:`, error);
+  }
+  const snapshotAvailableAgainAt = hosting.bookingStatus === "booked"
+    ? hosting.bookingUnavailableUntil
+    : undefined;
+  const effectiveAvailableAgainAt = availableAgainAt ?? (
+    snapshotAvailableAgainAt && snapshotAvailableAgainAt.getTime() > Date.now()
+      ? snapshotAvailableAgainAt
+      : null
+  );
   const images = hosting.listing.photos.previewUrls.length > 0
     ? hosting.listing.photos.previewUrls
     : [FALLBACK_IMAGE];
   return {
     ...spot,
-    status: availableAgainAt ? "booked" : spot.status,
-    availableAgainAt: availableAgainAt?.toISOString(),
+    status: effectiveAvailableAgainAt ? "booked" : spot.status,
+    availableAgainAt: effectiveAvailableAgainAt?.toISOString(),
     images,
     description: hosting.listing.about.description,
     howToGetThere: hosting.listing.about.howToGetThere,

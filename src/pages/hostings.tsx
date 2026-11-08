@@ -113,7 +113,7 @@ function Hostings() {
                     onClick={() => navigate(`/host-onboarding/${hosting.id}`)}
                   >
                     <Pencil className="h-3.5 w-3.5" />
-                    Edit
+                    Edit Hosting
                   </Button>
                   <Button
                     type="button"
@@ -122,7 +122,7 @@ function Hostings() {
                     onClick={() => setDeleteTargetId(hosting.id)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    Remove
+                    Remove Hosting
                   </Button>
                   </div>
                 </div>

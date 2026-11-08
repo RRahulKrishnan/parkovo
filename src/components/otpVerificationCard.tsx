@@ -24,7 +24,7 @@ function OtpVerificationCard({
   onComplete,
   mode = "signin",
 }: OtpVerificationCardProps) {
-  const { status, error, resendSecondsLeft, sendOtp, verifyOtp, resendOtp } =
+  const { status, error, resendSecondsLeft, sendOtp, verifyOtp, resendOtp, isOverrideOtpEnabled } =
     usePhoneVerification(mode);
   const [code, setCode] = useState("");
 
@@ -78,8 +78,16 @@ function OtpVerificationCard({
         <p className={`mt-1 text-sm ${theme.text.secondary}`}>
           {status === "sending"
             ? `Sending a code to ${phoneNumber}…`
-            : `Enter the 6-digit code sent to ${phoneNumber}`}
+            : isOverrideOtpEnabled
+              ? "Enter the development override code configured for this app."
+              : `Enter the 6-digit code sent to ${phoneNumber}`}
         </p>
+
+        {isOverrideOtpEnabled && (
+          <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            Development mode: no SMS is sent and this does not verify ownership of the phone number.
+          </p>
+        )}
 
         <div className="mt-5">
           <OtpInput

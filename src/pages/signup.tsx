@@ -120,7 +120,7 @@ function SignUp() {
         email: user.email ?? formData.email,
         phoneNumber: verifiedPhoneNumber,
       });
-      navigate("/role");
+      navigate("/welcome");
     } catch (err: unknown) {
       console.error("Couldn't finish setting up your account:", err);
       setAuthError(getAuthErrorMessage(err));

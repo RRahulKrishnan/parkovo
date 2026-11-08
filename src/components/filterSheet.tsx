@@ -71,6 +71,8 @@ function FilterSheet({
 
   const handleReset = () => {
     setDraft(DEFAULT_FILTERS);
+    onApply(DEFAULT_FILTERS);
+    onClose();
   };
 
   const handleApply = () => {

@@ -11,6 +11,7 @@ import Hostings from "./pages/hostings";
 import Profile from "./pages/profile";
 import AppLayout from "./layouts/appLayout";
 import BookingConfirmation from "./pages/bookingConfirmation";
+import AppOnboarding from "./pages/appOnboarding";
 import { RequireAuth, RequireCheckout } from "./components/routeGuards";
 
 function App() {
@@ -18,7 +19,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/role" element={<SelectRole />} />
+        <Route path="/role" element={<RequireAuth><SelectRole /></RequireAuth>} />
+        <Route path="/welcome" element={<RequireAuth><AppOnboarding /></RequireAuth>} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/host-onboarding" element={<RequireAuth><HostOnboarding /></RequireAuth>} />

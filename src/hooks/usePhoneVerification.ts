@@ -35,7 +35,15 @@ interface UsePhoneVerificationResult {
   verifyOtp: (code: string) => Promise<void>;
   resendOtp: () => Promise<void>;
   reset: () => void;
+  isOverrideOtpEnabled: boolean;
 }
+
+// This is intentionally compiled out of production builds. Set
+// VITE_DEV_OTP_OVERRIDE in .env.local (for example: 123456) to create test
+// accounts without Firebase Phone Auth while developing locally.
+const DEV_OVERRIDE_OTP = import.meta.env.DEV
+  ? import.meta.env.VITE_DEV_OTP_OVERRIDE?.trim()
+  : undefined;
 
 function toE164(phoneNumber: string, countryCode = DEFAULT_COUNTRY_CODE) {
   const digits = phoneNumber.replace(/\D/g, "");
@@ -83,6 +91,11 @@ export function usePhoneVerification(
       setStatus("sending");
       rawPhoneRef.current = phoneNumber;
       try {
+        if (DEV_OVERRIDE_OTP) {
+          setStatus("awaiting-code");
+          startResendTimer();
+          return;
+        }
         const auth = getFirebaseAuth();
         if (!verifierRef.current) {
           verifierRef.current = getRecaptchaVerifier(RECAPTCHA_CONTAINER_ID);
@@ -126,6 +139,11 @@ export function usePhoneVerification(
     setError(null);
     setStatus("verifying");
     try {
+      if (DEV_OVERRIDE_OTP) {
+        if (code !== DEV_OVERRIDE_OTP) throw new Error("Incorrect override OTP");
+        setStatus("verified");
+        return;
+      }
       if (!confirmationRef.current) {
         throw new Error("No verification in progress");
       }
@@ -151,5 +169,14 @@ export function usePhoneVerification(
     if (timerRef.current) clearInterval(timerRef.current);
   }, []);
 
-  return { status, error, resendSecondsLeft, sendOtp, verifyOtp, resendOtp, reset };
+  return {
+    status,
+    error,
+    resendSecondsLeft,
+    sendOtp,
+    verifyOtp,
+    resendOtp,
+    reset,
+    isOverrideOtpEnabled: Boolean(DEV_OVERRIDE_OTP),
+  };
 }

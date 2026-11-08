@@ -88,20 +88,21 @@ function ParkingSpotDetailPage() {
     <main className={`min-h-screen pb-28 ${theme.surface.page} ${theme.text.primary}`}>
       <div className="relative h-72 w-full bg-slate-100">
         <img src={spot.imageUrl} alt={spot.title} className="h-full w-full object-cover" />
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label="Go back"
-          className="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur transition hover:bg-white"
-        >
-          <ArrowLeft className="h-5 w-5 text-slate-900" />
-        </button>
         {spot.images.length > 1 && (
           <div className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">
             1 / {spot.images.length}
           </div>
         )}
       </div>
+
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        aria-label="Go back"
+        className="fixed left-4 top-4 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur transition hover:bg-white"
+      >
+        <ArrowLeft className="h-5 w-5 text-slate-900" />
+      </button>
 
       <section className="px-6 pt-5">
         <h2 className="text-2xl font-extrabold">{spot.title}</h2>

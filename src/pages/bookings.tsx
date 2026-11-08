@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarCheck, MapPin, Ban, Pencil } from "lucide-react";
+import { CalendarCheck, MapPin, Ban, Pencil, Loader2 } from "lucide-react";
 import { onAuthStateChanged } from "firebase/auth";
 import Button from "../components/button";
 import ConfirmDialog from "../components/confirmDialog";
 import { theme } from "../theme/theme";
 import { getFirebaseAuth } from "../firebase/config";
 import { listMyBookings, cancelBooking, type Booking } from "../firebase/bookings";
+import { getParkingSpot } from "../firebase/listings";
+import ParkingSpotCard from "../components/parkingSpotCard";
+import type { ParkingSpotSummary } from "../types/search";
 
 const STATUS_STYLES: Record<Booking["status"], string> = {
   upcoming: "bg-blue-50 text-blue-600",
@@ -23,39 +26,42 @@ interface BookingCardProps {
 
 function BookingCard({ booking, onEdit, onCancel }: BookingCardProps) {
   const isPast = booking.status === "completed" || booking.status === "cancelled";
+  const navigate = useNavigate();
+  const [spot, setSpot] = useState<ParkingSpotSummary | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    getParkingSpot(booking.listingId)
+      .then((result) => { if (mounted && result) setSpot(result); })
+      .catch((error) => console.warn("Couldn't load booking listing:", error));
+    return () => { mounted = false; };
+  }, [booking.listingId]);
 
   return (
     <div
-      className={`rounded-2xl border p-4 transition ${theme.border.default} ${
+      className={`overflow-hidden rounded-2xl border transition ${theme.border.default} ${
         isPast ? "bg-slate-50/70 opacity-80" : "bg-white"
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="text-sm font-bold">{booking.spotName}</h3>
-          <p className={`mt-1 flex items-center gap-1 text-xs ${theme.text.secondary}`}>
-            <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-            <span className="truncate">{booking.address}</span>
-          </p>
+      {spot ? (
+        <ParkingSpotCard spot={spot} embedded onClick={() => navigate(`/find-parking/${spot.id}`)} />
+      ) : (
+        <div className="flex min-h-28 items-center gap-3 p-4">
+          <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${theme.surface.subtle}`}><Loader2 className="h-5 w-5 animate-spin text-blue-600" /></div>
+          <div className="min-w-0"><h3 className="text-sm font-bold">{booking.spotName}</h3><p className={`mt-1 flex items-center gap-1 text-xs ${theme.text.secondary}`}><MapPin className="h-3.5 w-3.5" />{booking.address}</p></div>
         </div>
-        <span
-          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${STATUS_STYLES[booking.status]}`}
-        >
-          {booking.status}
-        </span>
-      </div>
-
-      <div className={`mt-3 flex items-center gap-2 text-xs ${theme.text.secondary}`}>
-        <span>{booking.date}</span>
-        <span aria-hidden="true">·</span>
-        <span>{booking.timeRange}</span>
-      </div>
-
-      {booking.status === "upcoming" && (
-        <div className="mt-4 flex gap-2">
+      )}
+      <div className="mx-4 border-t border-dashed border-slate-300" />
+      <div className="px-4 pb-4 pt-3">
+        <div className="flex items-start justify-between gap-3">
+          <p className={`text-xs ${theme.text.secondary}`}>{booking.date} · {booking.timeRange}</p>
+          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${STATUS_STYLES[booking.status]}`}>{booking.status}</span>
+        </div>
+        {booking.status === "upcoming" && (
+          <div className="mt-3 flex gap-2">
           <Button type="button" variant="secondary" size="sm" onClick={() => onEdit(booking.id)}>
             <Pencil className="h-3.5 w-3.5" />
-            Edit booking
+            Edit Booking
           </Button>
           <Button
             type="button"
@@ -64,10 +70,11 @@ function BookingCard({ booking, onEdit, onCancel }: BookingCardProps) {
             onClick={() => onCancel(booking.id)}
           >
             <Ban className="h-3.5 w-3.5" />
-            Cancel booking
+            Cancel Booking
           </Button>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -175,9 +182,6 @@ function Bookings() {
           <div className="space-y-6">
             {upcomingBookings.length > 0 && (
               <div>
-                <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Upcoming
-                </h2>
                 <div className="space-y-3">
                   {upcomingBookings.map((booking) => (
                     <BookingCard
