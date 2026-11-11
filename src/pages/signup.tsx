@@ -314,16 +314,22 @@ function SignUp() {
                 error={errors.confirmPassword}
               />
 
-              <p className={`text-sm ${theme.text.secondary}`}>
-                By continuing, you agree to our{" "}
+              <p className={`text-sm ${theme.text.secondary} flex flex-wrap items-center gap-x-1`}>
+                <span>By continuing, you agree to our</span>
+
                 <button
                   type="button"
                   onClick={() => setIsTermsCardOpen(true)}
                   className={`font-medium ${theme.text.link} underline underline-offset-2 transition`}
                 >
-                  Terms & Privacy Policy
+                  Terms & Conditions
                 </button>
-                {termsAccepted && <span className="ml-1 font-semibold text-emerald-600">✓</span>}
+
+                {termsAccepted && (
+                  <span className="font-semibold text-emerald-600 whitespace-nowrap">
+                    ✓
+                  </span>
+                )}
               </p>
 
               <Button

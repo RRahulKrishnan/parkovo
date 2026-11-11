@@ -1,10 +1,16 @@
-export type PlaceCategory = "metro" | "mall" | "events" | "airport" | "hospital";
+
+export type PlaceCategory =
+  | "metro"
+  | "mall"
+  | "events"
+  | "airport"
+  | "food_drink";
 
 export const PLACE_CATEGORY_OPTIONS: {
   value: PlaceCategory;
   /** Shown to hosts when tagging a listing. */
   label: string;
-  /** Carousel copy shown to drivers. */
+  /** Discovery copy shown to drivers. */
   promoTitle: string;
   promoSubtitle: string;
 }[] = [
@@ -23,35 +29,40 @@ export const PLACE_CATEGORY_OPTIONS: {
   {
     value: "events",
     label: "Near an event venue",
-    promoTitle: "Parking near event venues",
-    promoSubtitle: "Walk to the gate, skip the crush",
+    promoTitle: "Parking near events",
+    promoSubtitle: "Walk to the gate, skip the lines",
   },
   {
     value: "airport",
     label: "Near the airport",
-    promoTitle: "Parking near the airport",
+    promoTitle: "Parking near airports",
     promoSubtitle: "Park first, fly stress-free",
   },
   {
-    value: "hospital",
-    label: "Near a hospital",
-    promoTitle: "Parking near hospitals",
-    promoSubtitle: "Close by when every minute counts",
+    value: "food_drink",
+    label: "Near cafes, restaurants, bars & breweries",
+    promoTitle: "Parking near hangouts",
+    promoSubtitle: "Park close to your next favourite spot",
   },
 ];
 
-// Fallback for listings a host hasn't explicitly tagged: guess the place
-// from words in their own title / description / directions.
+// Fallback for listings a host hasn't explicitly tagged.
 const PLACE_KEYWORDS: Record<PlaceCategory, RegExp> = {
   metro: /\bmetro\b/i,
+
   mall: /\bmalls?\b/i,
-  events: /\b(events?|stadium|arena|concert|exhibition|convention)\b/i,
+
+  events:
+    /\b(events?|stadium|arena|concert|exhibition|convention)\b/i,
+
   airport: /\bairport\b/i,
-  hospital: /\bhospitals?\b/i,
+
+  food_drink:
+    /\b(cafes?|coffee shops?|restaurants?|dhabas?|bars?|pubs?|brewer(?:y|ies)|brewpubs?|sushi|bistros?|diners?|lounges?|fine dining|nightclubs?|taverns?)\b/i,
 };
 
 export function inferPlaceCategories(text: string): PlaceCategory[] {
-  return (Object.keys(PLACE_KEYWORDS) as PlaceCategory[]).filter((category) =>
-    PLACE_KEYWORDS[category].test(text)
-  );
+  return (
+    Object.keys(PLACE_KEYWORDS) as PlaceCategory[]
+  ).filter((category) => PLACE_KEYWORDS[category].test(text));
 }

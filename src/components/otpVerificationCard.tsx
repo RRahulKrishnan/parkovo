@@ -122,7 +122,7 @@ function OtpVerificationCard({
         </div>
 
         {isVerified && (
-          <p className="mt-3 text-sm font-medium text-emerald-600">
+          <p className="mt-3 text-sm text-center font-medium text-emerald-600">
             Phone number verified ✓
           </p>
         )}
